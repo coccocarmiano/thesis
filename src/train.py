@@ -20,7 +20,7 @@ PALETTE = [[20, 20, 220], [20, 220, 20]]
 
 @DATASETS.register_module()
 class MGIDataset(CustomDataset):
-    CALSSES = classes
+    CLASSES = classes
     PALETTE = PALETTE
 
     def __init__(self, split, **kwargs):
@@ -28,20 +28,20 @@ class MGIDataset(CustomDataset):
 
 
 cfg = Config.fromfile("./confs/mgi_dataset.py")
-dev = torch.device("cuda") if torch.cuda.is_available() else torch.device(
-    "cpu")
-cfg.device = dev
-
 train_dataset = build_dataset(cfg.data.train)
 val_dataset = build_dataset(cfg.data.val)
 test_dataset = build_dataset(cfg.data.test)
 
-# model = build_segmentor(cfg.model).to(dev)
 model = init_segmentor(cfg)
 mmcv.mkdir_or_exist(osp.abspath(cfg.work_dir))
 
 print("Train dataset - Number of Samples:", len(train_dataset))
 print("Test dataset - Number of Samples:", len(test_dataset))
 print("Val dataset - Number of Samples:", len(val_dataset))
+
+cfg.runner.max_iters = 40_000  # Max iters != epochs
+cfg.log_config.interval = 250  # Evaluate at
+cfg.checkpoint_config.interval = 250  # Save model
+cfg.evaluation.interval = 250  # Print stats
 
 train_segmentor(model, [train_dataset], cfg, distributed=False, validate=True)

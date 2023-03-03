@@ -160,12 +160,24 @@ data = dict(
     ),
 )
 
-checkpoint_config = dict(interval=100,
-                         meta=dict(
-                             CLASSES=CLASSES,
-                             PALETTE=PALETTE,
-                         ))
-
-evaluation = dict(interval=100, )
-
-runner = dict(max_iters=2000, )
+checkpoint_config = dict(
+    interval=2000,
+    meta=dict(
+        CLASSES=CLASSES,
+        PALETTE=PALETTE,
+    ))
+evaluation = dict(
+    interval=2000
+)
+runner = dict(
+    max_iters=160_000
+)
+log_config = dict(
+    interval=2000
+)
+evaluation = dict(
+    interval=2000
+)
+checkpoint_config = dict(
+    interval=400
+)

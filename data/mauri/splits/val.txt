@@ -1,6 +1,6 @@
-0.jpg 0.png
-10.jpg 10.png
-11.jpg 11.png
-12.jpg 12.png
-13.jpg 13.png
-14.jpg 14.png
+0
+10
+11
+12
+13
+14
