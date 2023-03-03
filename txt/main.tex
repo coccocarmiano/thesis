@@ -1,0 +1,85 @@
+\documentclass[a4paper,twoside]{toptesi}
+\usepackage{caption}
+\usepackage{sectsty}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a-1b]{pdfx}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{url}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{verbatim}
+\usepackage{floatrow}
+
+\graphicspath{assets}
+\captionsetup{font=Large,labelfont=bf}
+\hypersetup{%
+    pdfpagemode={UseOutlines},
+    bookmarksopen,
+    pdfstartview={FitH},
+    colorlinks,
+    linkcolor={black},
+    citecolor={blue},
+    urlcolor={blue}
+  }
+
+
+\newtheorem{osservazione}{Osservazione}% Standard LaTeX
+\newtheorem{definition}{Definition}
+\floatsetup[table]{font=Large}
+
+\begin{document}
+% \english
+\fontsize{14}{24}\selectfont
+
+\ateneo{} %Politecnico di Torino}
+\corsodilaurea{Ingegneria Informatica}
+
+\titolo{Sviluppo di un'Interfaccia CAD per Endoscopie Gastrointestinali}
+
+\candidato{Matteo \textsc{Quarta}}
+\relatore{Prof. Monica \textsc{Visintin}}
+\secondorelatore{Prof. Guido \textsc{Pagana}}
+\sedutadilaurea{\textsc{Anno Accademico} 2022/2023}
+\logosede[6cm]{./assets/logo-polito.jpg}
+
+\CorsoDiLaureaIn{Laurea Magistrale in\space}
+\TesiDiLaurea{Tesi di Laurea Magistrale}
+\InName{in}
+\CandidateName{Candidato}
+\AdvisorName{Relatori}
+
+
+\frontespizio
+
+% Acknowledgements here o suppongo qualche frase iniziale a effetto tipo "Dediacata ai miei gattini Echo e Nala"
+
+\abstract
+
+\input{./chaps/abstract.tex}
+
+\indici
+
+\mainmatter
+
+
+% \include{./chaps/previous-works}
+
+\include{chaps/cosa-sono-le-metaplasie.tex}
+\include{chaps/modello.tex}
+\include{chaps/applicativo.tex}
+
+\chapter{Conclusioni}
+\section{\label{sec:results}Considerazioni e Risultati}
+\section{Lavori Futuri}
+
+\bibliographystyle{plain}
+\bibliography{biblio}
+\listoffigures
+\listoftables
+% \ringraziamenti
+\end{document}

@@ -1,0 +1,48 @@
+\begin{thebibliography}{1}
+
+\bibitem{HyperKvasirDataset}
+Hanna Borgli, Vajira Thambawita, Pia~H Smedsrud, Steven Hicks, Debesh Jha,
+  Sigrun~L Eskeland, Kristin~Ranheim Randel, Konstantin Pogorelov, Mathias Lux,
+  Duc Tien~Dang Nguyen, Dag Johansen, Carsten Griwodz, H{\aa}kon~K Stensland,
+  Enrique Garcia-Ceja, Peter~T Schmidt, Hugo~L Hammer, Michael~A Riegler,
+  P{\aa}l Halvorsen, and Thomas de~Lange.
+\newblock Hyperkvasir, a comprehensive multi-class image and video dataset for
+  gastrointestinal endoscopy.
+\newblock {\em Scientific Data}, 7(1):283, 2020.
+
+\bibitem{imagenet}
+Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li~Fei-Fei.
+\newblock Imagenet: A large-scale hierarchical image database.
+\newblock In {\em 2009 IEEE conference on computer vision and pattern
+  recognition}, pages 248--255. Ieee, 2009.
+
+\bibitem{ilpaper}
+Siripoppohn~V. et~al.
+\newblock Real-time semantic segmentation of gastric intestinal metaplasia
+  using a deep learning approach, 2022.
+
+\bibitem{cocodataset}
+Tsung{-}Yi Lin, Michael Maire, Serge~J. Belongie, Lubomir~D. Bourdev, Ross~B.
+  Girshick, James Hays, Pietro Perona, Deva Ramanan, Piotr Doll{'{a} }r, and
+  C.~Lawrence Zitnick.
+\newblock Microsoft {COCO:} common objects in context.
+\newblock {\em CoRR}, abs/1405.0312, 2014.
+
+\bibitem{Toma2022}
+Toma M.
+\newblock Metodi di machine learning per il riconoscimento di metaplasie
+  gastrointestinali a partire da immagini gastroscopiche, 2022.
+
+\bibitem{GLCM}
+Shruti Singh, Divya Srivastava, and Suneeta Agarwal.
+\newblock Glcm and its application in pattern recognition.
+\newblock In {\em 2017 5th International Symposium on Computational and
+  Business Intelligence (ISCBI)}, pages 20--25, 2017.
+
+\bibitem{bisenet}
+Changqian Yu, Jingbo Wang, Chao Peng, Changxin Gao, Gang Yu, and Nong Sang.
+\newblock Bisenet: Bilateral segmentation network for real-time semantic
+  segmentation.
+\newblock {\em CoRR}, abs/1808.00897, 2018.
+
+\end{thebibliography}

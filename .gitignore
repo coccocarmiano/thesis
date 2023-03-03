@@ -1,0 +1,22 @@
+# Root Dir
+.venv
+
+# Source code
+.vscode
+**/*.tar.gz
+src/mmsegmentation/
+src/__pycache__
+
+# Latex
+txt/**/*.log
+txt/**/*.aux
+txt/**/*.out
+txt/**/*.gz
+txt/**/*.toc
+txt/**/*.xmpi
+txt/**/*.lof
+txt/**/*.lot
+txt/**/*.fls
+txt/**/*.fdb_latexmk
+txt/**/*.blg
+.pylintrc
