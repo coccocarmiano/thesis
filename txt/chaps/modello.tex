@@ -3,31 +3,27 @@
 \chapter{Modello}
 \section{Lavori Precedenti e Considerazioni Generali}
 
-Intelligenza artificiale, o machine learning che dir si voglia,
-è un termine molto ampio, che racchiude una vastissima
-gamma di tecniche e metodi per elaborare i dati, che possono spaziare su più livelli di
-complessità ed essere divisi in molti possibili modi.
+La terminologia intelligenza artificiale, o alternativamente machine learngin,
+indica un campo molto vasto che raccoglie molte e diverse tecniche di apprendimento
+ed elabroazione dati, che possono spaziare su più livelli di complessità ed essere 
+divisi in molteplici categorie.
 Un primo distinguo che si puo' fare nel merito delle tecniche di apprendimento è quello
 tra {\it shallow learning} e {\it deep learning}.
 Il primo si potrebbe tradurre in italiano come "apprendimento superficiale",
 mentre il secondo come "apprendimento profondo". \\
 Seppure le differenze tra i due siano tante e non di poco conto, in entrambi i casi
-abbiamo un algoritmo che dato un input $\vec{x}$, la cui forma discuteremo a breve in
-quanto i due modelli di riferimento utilizzano algoritmi differenti, calcolano un
-output $\vec{y} = f(\vec{x})$.
-Tale risultato $\vec{y}$ puo' assumere varie forme, ma una rappresentazione molto
-comune è che quella di un vettore di dimension $N_c$, dove $N_c$ è il numero di
+abbiamo un algoritmo che dato un input $\vec{x}$, la cui realizzazione concreta
+varia a seconda dell'approccio utilizzato e specifichieremo nel dettaglio quando
+necessario, e ne calcolano un output $\vec{y} = f(\vec{x})$.
+Anche per $\vec{y}$ la realizzazione concreta puo' differire molto, 
+ma una forma generale è un vettore con $N_c$ dimensioni, $N_c$, dove $N_c$ è il numero di
 classi del problema, ovvero il numero di possibili risposte.
 Nel nostro specifico caso, dove cerchiamo soltanto di discriminare tra un tessuto
 ritenuto sano ed uno ritenuto patologico, avremmo che $N_c = 2$.
+Nel caso si stia trattando un problema binario come il nostro, un'altra alternativa
+è quella di utilizzare un output di dimensione $N_c = 1$, che può essere un
+vettore unidimensionale o uno scalare.
 
-Si tenga a mente anche che la risposta ottenuta da parte del modello, $\vec{y}$,
-non deve necessariamente essere un vettore, ed è riportato come tale solo per
-questioni di generalità: nel nostro primo modello di riferimento la risposta
-è infatti uno scalare.
-Ciò è dovuto anche al fatto di star lavorando su un problema binario, dunque
-un singolo valore è sufficiente per poter decidere se classificare il nostro
-input come appartente alla classe $C_0$ o alla classe $C_1$.
 
 \begin{figure}
     \center
@@ -35,86 +31,46 @@ input come appartente alla classe $C_0$ o alla classe $C_1$.
     \caption{\label{fig:semseg}Esempio di Semantic Segmentation applicata al riconoscimento di oggetti stradali. Fonte: https://towardsai.net/p/l/machine-learning-7}
 \end{figure}
 
-In entrambi i casi, il problema che si tenta di risolvere è detto
-{\it semantic segmentation}, di cui un esempio è visibile nella figura \ref{fig:semseg} un caso specifico della {\it image classification}.
-Nel secondo caso infatti si classifica un'immmagine interamente come
-appartenente a una o l'altra classe, che malpone il problema in essere in
-quanto le zone potenzialmente patologiche potrebbero essere anche ridotte
-in superficie, quindi facendo prevalere la loro classe rispetto a quella
-effettivamente più presente.
-Nel secondo caso invece si cercano porzioni dell'immagine che corrispondando a
-una specifica classe in modo da poter classificare solo quella porzione.
-È dunque un problema che si avvicina molto di più al nostro problema reale
-e che ci permette di avere un'idea di come potrebbe essere la nostra soluzione,
-nonché essere molto più utile per il personale medico che ha bisogno
-di conoscere le zone ritenute come potenzialmente patologiche in modo da
-poter valutare effettivamente se lo sia o meno.
+Il problema che si tenta di risolvere è denominato
+{\it semantic segmentation}, di cui un esempio è visibile nella figura 
+\ref{fig:semseg} un caso specifico della {\it image classification}.
+Nella {\it image classification} infatti quel che si fa è dedurre cosa l'immagine
+in input rappresenti, senza specificare quale parte dell'immagine contenga la classe
+rilevata.
+Nella {\it semantic segmentation} invece si vuole rilevare quale zona dell'immagine
+contenga le classi rilevate. 
+L'utilizzo del plurale nell'ultima frase non è casuale: se infatti nella {\it image classification}
+un'immagine contnente più oggetti risponde generalmente con una sola classe,
+nella {\it semantic segmentation} si gestisce anche il caso in cui siano presenti più
+oggetti di diverse classi, come nel nostro caso in cui un'immagine contente un
+tessuto potenzialmetne patologico conterrà anche parti di tessuto sano o
+porzioni d'immagine che non rappresentano affatto dei tessuti.
+Per questo motivo il nostro problema binario avrà come classi la classe $C_1$, che indicherà
+le zone di tessuto ritenute come potenzialmente patologiche ({\it "sick"}) e la classe $C_0$,
+che denomineremo {\it "sane"} in maniera impropria dato che comprenderà
+anche la parte di sfondo dell'immagine.
+Questo è dovuto al fatto che i dataset impiegati, spiegati nel dettaglio in 
+\ref{sec:Dataset}, hanno la sola annotazione delle zone malate, e non distinguono tra
+zone sane e sfondo.
 
-
-
-% L'$i$-esimo valore del vettore $\vec{y}$, annotato come $y_i$, rappresenta la
-% quanto il nostro modello sia convinto che quel dato appartenga alla $i$-esima classe.
-% Questo valore non ha un significato fisico reale, semplicemente se $y_0$ è più alto
-% di $y_1$, allora per il nostro modello è più probabile che quel dato appartenga alla
-% classe $0$. \\
-% Si puo' tentare di dare un'interpretazione pribabilistica del significato di $y_i$
-% tramite alcuni operatori, con il più utilizzato essere l'operatore {\it softmax},
-% definito come:
-
-% $$\displaystyle p_i = \frac{e^{y_i}}{\sum_{j=1}^{N_c} e^{y_j}}$$
-
-% che per via della sua definzione ci assicura che $\displaystyle\sum_i^{N_c} p_i = 1$, ed è
-% dunque interpretabile come una distribuzione di probabilità. 
-% Una ulteriore possibilità, disponibile nello specifico caso in cui si stia
-% lavorando su un problema di classificazione binaria come nel nostro caso,
-% è quella di utilizzare un singolo valore in output $y$, con valori di segno
-% positivo che indicano un'appartenenza alla classe $C_1$ e valori di segno
-% negativo che indicano un'appartenenza alle classe $C_0$.
-% La magnitudine di $y$ indica la confidenza del modello nella sua scelta.
-% In questo caso, un'operatore che ci permette di dare un significato
-% probabilistico ad $y$ è l'operatore {\it sigmoid}, definito come:
-
-% $$\displaystyle p = \frac{1}{1 + e^{-y}}$$
-
-% che indica appunto la probabilità che il dato in input appartenga alla
-% classe $C_1$.
-% Va da se che per via di questa definzione, $p \in [0, 1]$, e che la probabilità
-% che il dato appartenga alla classe $C_0$ è semplicemente $1 - p$.
-% Entrambe le opzioni sono attuabili in entrambi i modelli di riferimento,
-% e non esiste una regola generica che indichi a priori che uno funzionerà
-% meglio dell'altro. \\
-% Questa trasformazione in un valore probabilistico non ha un'utilità
-% meramente umana, per dare a noi a una misura della confidenza nella
-% predizione, ma svolge un suo ruolo in fase di addestramento del modello.
-% Di fatto i modelli imparano a riconoscere gli input andando a ridurre il tasso
-% di errore, ma non in termini di percentuale di errore o numero assoluto di
-% misclassificazioni, ma come cumulativo del totale dell'errore compiuto sulle
-% classificazioni.
-% La misura di questo errore viene fatta tramite quella che è detta
-% funzione di perdita, dalla generica forma $l = L(\vec{y}, \vec{y}^*)$.
-% I due modelli di riferimento utilizzano due funzioni di perdita differenti,
-% ma una possibile implementazione, molto semplice e spesso dagli scarsi risultati,
-% è la differenza dei termini.
-% Quindi, se per un campione con $y*=1$ ottenessimo un risultato di $y=0.9$, vale
-% a dire modello comunque molto convinto della sua scelta, il nostro errore
-% sarebbe quantificabile come $l = |1 - 0.9| = 0.1$.
 
 \subsection{\label{sec:shallow-learning}Tecniche Shallow Learning: Alberi Decisionali}
 
 Il nostro primo modello di riferimento\cite{Toma2022} è basato su
 alberi decisionali, modelli molto popolari nel mondo del machine learning
-per vari motivi, con il principale essere probabilmente la possibilità
-di interpretare il loro funzionamento.
+per vari motivi, uno tra i quali è la capacità di poter interpretare il loro funzionamento.
 Infatti se con modelli {\it deep learning} non è possibile, se non in
-minima misura, aver certezza del processo di apprendimento o interpretare
-quello di inferenza, gli alberi decisionali per costruzione sono molto
+modo ristretto e con poche certezze, capire il processo di inferenza, 
+gli alberi decisionali per costruzione sono molto
 vicini al pensiero umano, e quindi facilmente interpretabili.
 Modelli di questo tipo prendono anche il nome di modelli {\it white box},
 mentre modelli non interpretabili prendono il nome di modelli {\it black box}.
 Tuttavia, questa affermazione ha una validità relativa, in quanto
 nel momento in cui i valori del campione in ingresso, vale a dire le
 componenti del nostro vettore $\vec{x}$ salgono in numero e complessità,
-questo concetto va via via svanendo.
+interpretare il procedimento di inferenza diventa sempre più difficile non per
+come il modello prende la decisione ma perché è difficile per le persone
+valutare la decisione sulla base di valori statistici.
 
 Il lavoro in questione non ha però semplicemente utilizzato degli decisionali,
 ma piuttosto un {\it ensamble} di alberi decisionali, che prende il nome
@@ -132,15 +88,33 @@ il risultato che la maggioranza dei singoli alberi ha predetto.
 \subsection{Algoritmo I}
 
 Al fine di valutare i pro e i contro di questa metodologia, l'algoritmo
-è stato reimplementato {\it ex-novo} con una GUI a contorno.
-Iniziamo dunque a vederne il funzionamento.\\
-L'immagine di partenza viene trasformata in bianco e nero e
-suddivisa in blocchi di dimensione prefissata, che prendono il nome di
-{\it ROI} ({\it Region of Interest}) o {\it patches}.
-La decolorazione è dovuta al fatto che le tecniche di {\it pre-processing},
-ovvero le trasformazione applicate all'immagine prima di suddividerla, in {\it ROI},
-sono state studiate per immagini in scala di grigi, ma una possibilità potrebbe
-essere quella di applicare le stesse tecniche ad ognuno dei canali RGB.\\
+è stato reimplementato con alcune modifiche e lievi ottimizzazioni, assieme ad una
+GUI per valutarne la praticità d'uso.
+
+Come nel lavoro originale, l'immagine viene convertita in scala di grigi,
+e si saltà il ritaglio delle immadini dal momento che esse sono già state
+ritagliate in precedenza.
+Dopodiché si applia comunque l'algoritmo di {\it K-Means} per rimuovere
+i riflessi di luce.
+In questo caso per velocizzare il processo si utilizza comunque un numero
+$K=30$, con la differenza che non si utilizza un'inizializzazione
+casuale ma si parte da una suffivisiione equispaziata da 0 a 255, ovvero
+il massimo e il minimo valore di intensità dei pixel, oltre a iterare
+il procedimento una sola volta.
+Si rimuovono i pixel che ricadono nei tre cluster a intensità maggiore.
+Infine si applica il metodo del gradiente di Sobel per evidenziare i bordi
+e le discontinuità nelle venature del tessuto.
+Dall'immagine ottenuta si estraggono delle {\it ROI} ({\it Region of Interest}),
+anche dette {\it patches}, che sono delle porzioni dell'immagine di dimensione
+fissa 50$\times$50 pixel, con una sovrapposizione del 40\% (20 pixel), ovvero
+alcuni pezzi di una ROI fanno anche parte di altre ROI adiacenti.
+Un esempio di questo tipo di sovrapposizione è mostrato in Figura \ref{fig:patch-overlap}.
+
+\begin{figure}
+    \includegraphics[width=\textwidth]{./assets/path-overlap.png}
+    \caption{\label{fig:patch-overlap}Esempio di sovrapposizione delle ROI}
+\end{figure}
+
 Da qui vengono estratti i primi 11 valori statistici che andranno a comporre
 i primi 11 valori del nostro vettore $\vec{x}$, che rappresenta la ROI in
 ingresso.
@@ -185,11 +159,6 @@ di lunghezza $j$ percorse nella direzione $\theta$ composte tutte dal medesimo
 livello di grigio $i$.
 Una rappresentazione visiva del calcolo è riportata nella Figura \ref{fig:glrlm}.
 
-\begin{figure}[h]
-    \center
-    \includegraphics[width=0.9\textwidth]{./assets/glrlm.jpg}
-    \caption{\label{fig:glrlm}Calcolo di una GLRLM a 3 livelli di grigio con angolo $\theta$ uguale a 0°, fonte: http://www.ajnr.org/content/36/7/1343/F2}
-\end{figure}
 
 Dalla GLRLM si estraggono ulteriori 11 valori statistici.
 Infine, l'ultima trasformazione da applicare all'immagine è la traduzione in
@@ -249,8 +218,8 @@ parzialmente sovrapposta cui ha avuto accesso in fase di train.
 
 \begin{figure}[h]
     \center
-    \includegraphics[width=0.9\textwidth]{./assets/gui-one.png}
-    \caption{\label{fig:gui-one}Interfaccia grafica per la classificazione delle ROI. La zona cerchiata in verde indica l'area che desidereremmo rilevare, le zone a sovrapposizione rossa indicano le zone rilevate come anomale.}
+    \includegraphics[width=0.9\textwidth]{./assets/glrlm.jpg}
+    \caption{\label{fig:glrlm}Calcolo di una GLRLM a 3 livelli di grigio con angolo $\theta$ uguale a 0°, fonte: http://www.ajnr.org/content/36/7/1343/F2}
 \end{figure}
 
 A questo punto ogni ROI viene classificata e a partire da essa viene
@@ -264,6 +233,12 @@ praticamente in una classificazione come appartente a una data classe
 se la maggioranza delle classificazioni appartengono a quella data classe.
 Vengono infine applicati degli operatori morfologi di chiusura, erosione e dilazione
 per ottenere una maschera meglio formata.
+
+\begin{figure}[h]
+    \center
+    \includegraphics[width=0.9\textwidth]{./assets/gui-one.png}
+    \caption{\label{fig:gui-one}Interfaccia grafica per la classificazione delle ROI. La zona cerchiata in verde indica l'area che desidereremmo rilevare, le zone a sovrapposizione rossa indicano le zone rilevate come anomale.}
+\end{figure}
 
 Presentata questa possibile implementazione abbiamo compreso le grosse
 limitazioni che un approccio di questo genere ha.
@@ -306,57 +281,54 @@ feature estratte da quelle ROI come meno probabilmente patologiche.
 \subsection{\label{sec:deep-learning}Tecniche Deep Learning: Reti Neurali Convoluzionali}
 
 Passiamo ora alla seconda possibilità che è stata valutata nello
-sviluppare l'applicativo.
-Il suo impiego è ispirato dagli ottimi risultati ottenuti in \cite{ilpaper},
-che ha dimostrato come un'applicazione di questo tipo possa essere realizzata,
-anche se applicandolo al riconoscimento dei polipi, altra patologia
-che si sviluppa sempre nello stomaco.
-Eventuali differenze di elaborazione verranno spiegate qui, mentre le
-differenze nei dati utilizzati verranno spiegate nella sezione \ref{sec:Dataset}.
-Vediamo dunque le differenze rispetto al primo algoritmo.
-Le reti neurali convoluzionali ricadono, come accennato, nella categoria
-{\it black box}.
+sviluppo dell'applicativo, che riprende studi nel settore \cite{ilpaper}
+che hanno dimostrato ottenere buoni risultati e fanno uso di reti neurali,
+ovvero modelli di apprendimento profondo.
 Questo significa che a differenza del precedente algoritmo non è possibile
-comprendere, almeno in modo diretto o semplice, il processo di classificazione,
-se non tramite interventi specifici all'architettura interna della rete,
-ma solitamente permettono anche di ottenere risultati migliori, soprattutto
-nel caso di analisi di immagini in cui hanno sin da principio dimostrato
-una grossa dominanza sui modelli di apprendimento superficiale.
+comprendere il processo di classificazione, se non tramite interventi 
+specifici all'architettura interna della rete, ma solitamente permettono
+anche di ottenere risultati migliori, soprattutto nel caso di analisi di 
+immagini in cui hanno sin da principio dimostrato una grossa dominanza 
+sui modelli di apprendimento superficiale.
 
-La struttura generica di una rete impiegata per la {\it semantic segmentation}
-comprende quattro fasi.
-La prima è quella di  preprocessing, dove varie trasformazioni vengono applicate
-all'immagine in input.
-Le trasformazioni più comuni sono la normalazziazione dell'immagine
-tramite {\it Z-Normalization}, portando quindi l'immagine in input
-ad avere una media di 0 ed una deviazione standard di 1 lungo i tre canali,
-oppure altre volte ad aggiungere disturbi nell'immagine, come rotazioni,
-desarutazioni e cambi di contrasto casuali al fine di rendere il modello
-più robuto ed aumentare artificialmente la quantità di dati di cui si
-dispone.
-Il dettaglio di quelli applicati è elencato nella sezione \ref{sec:Dataset}.
-Trasformazione tassativa è però quella della trasformazione delle dimensioni
-dell'immagine a dimensione fissa, perché è necessario che tutte le immagini
-siano dello stesso formato.
-La seconda fase è quella di {\it feature extraction}, dove il modello
-apprende a riconoscere le caratteristiche dell'immagine in input.
-Questo avviene tramite l'applicazione di una serie di filtri convoluzionali
-e operazioni di {\it pooling} volte a ridurre il numero di dati da usare
-in seguito che altramente sarebbe intrattabile.
+Un generico modello di {\it semantic segmentation} prevede varie
+componenti e varie fasi.
+Anzitutto il modello utilizza le immagini a colore e non convertite
+in bianco e nero, e questo potrebbe dare grossi vantaggi rispetto
+alla controparte di apprendimento superficiale.
+La fase di {\it pre-processing} è sostanzialmente diversa non solo
+nella realizzazione ma anche negli intenti:
+se di fatto nell'algoritmo visto in \ref{sec:shallow-learning} lo
+scopo era rendere i dati in input quanto più diferibili possibili,
+qui invece si punta ad aggiungere disturbi ed alterazioni casuali per
+due finalità:
+la prima è quella di rendere il modello più generale e robusto,
+e quindi più performante;
+la seconda è per fini di {\it data-agumentation}, di cui 
+parleremo più approfonditamente in \ref{sec:Dataset}.
+A questo punto inizia la {\it feature extraction}, che consiste
+nell'impiego di varie sequenze di filtri convoluzioni e di operatori
+di {\it pooling}.
+Il funzionamento generale di questi modelli è piramidale, dove si
+esegue filtro $\to$ pooling $\to$ filtro $\to$ pooling $\to$ ...
+come nella figura \ref{fig:cnn}, ma l'algoritmo specifico usa
+un approccio leggermente diverso e verrà discusso nel dettaglio
+in \ref{sec:bisenet}.
+Lo scopo dei filtri è estrarre informazioni dall'immagine,
+mentre quello degli strati di pooling e comprimere queste
+informazioni che sarebbero altrimenti troppo numerose e dunque
+intrattabili.
 
-Il componente che esegue questa estrazione è detta {\it backbone}, ovvero
-spina dorsale, e la scelta di quale usale è generalmente libera
-ed adattata alle proprie esigenze.
-Esistono infatti molteplici backbone, da quelle più semplici che
-utilizzano un numero di passaggi limitato, più veloci da elaborare
-ma generalmente anche meno performanti, a quelle più complesse che
-che invece ottengono risultati migliori al costo di tempo di elaborazione
-più elevato.
-La scelta di quale usare deve quindi essere un compromesso tra velocità
-e accuratezza che va adattato all'applicativo.
-Va fatto notare che anche questa fase è soggetta all'apprendimento, ovvero
-il modello impara non solo a classificare le aree proposte ma apprende anche
-che tipo di aree proporre.
+Infine dal risultato degli algoritmi di {\it region proposal}
+identificano le zone di rilievo e su queste eseguono la classificazione.
+È bene notare che anche questa fase è soggetta ad apprendimento,
+ovvero il modello impara nel tempo a riconoscere ROI che potrebbero
+essere interessanti o meno, e le zone dell'immagine che non
+vengono estratte come ROI sono automaticamente classificate come
+classe "sfondo", nel nostro caso "sano".
+Inoltre a differenza dell'algoritmo visto in \ref{sec:shallow-learning}
+il numero e la dimensione delle ROI estratte non è fisso.
+
 
 \begin{figure}[ht]
     \centering
@@ -364,69 +336,44 @@ che tipo di aree proporre.
     \caption{\label{fig:cnn}Visualizzazione del processo di classificazione di un'immagine. Fonte: https://towardsdatascience.com/region-of-interest-pooling-f7c637f409af}
 \end{figure}
 
-L'output di questa fase viene poi sottoposto ad una di {\it region proposal},
-dove il modello cerca di individuare nell'immagine delle aree ritenute di
-interesse e che vanno quindi analizzate, con delle distinzioni importanti
-da fare rispetto all'algoritmo visto in \ref{sec:shallow-learning}.
-Se infatti precedentemente si estraevano un numero fisso di ROI e di
-dimensione prefissata, in questo caso abbiamo molta più variabilità e
-possono dunque essere di numero variabile, generalmente molto più contenuto,
-e di dimensione arbitraria.
-La ROI proposta viene nuovamente ridmensionata e passata alla testa del
-modello, che produce una maschera che classifica il singolo pixel.
-Questa è un'ulteriore differenza rispetto a quanto visto prima dove
-pixel potenzialmente appartenenti ad un'altra classe venivano classificati
-tutti allo stesso modo, mentre in questo caso ogni pixel viene classificato
-indipendentemente.
-Come accennato, questo era precedentemente accettato poiché le ROI
-avevano dimensioni molto contenute e l'obiettivo era classificare l'intera
-area di interesse, quindi piccole misclassificazioni non avevano un impatto
-significativo.
+Le ROI estratte sono quindi sottoposte a una testa, detto livello
+completamente connesso, che etichetta ogni singolo pixel al suo
+interno.
+È quindi evidente che in questo caso il modello ha il compito,
+oltre quello di riconoscere se la ROI sia potenzialemente patologica
+o meno, anche di riconoscere quale parte della ROI lo è, e dunque
+a livello globale debba apprendere non solo a riconoscere le zone
+anomale ma anche a tracciarne la maschera.
 
-Notare infne che il modello impara sia a predire la maschera che a
-predire la classe da assegnare alla maschera.
-Una discussione più dettagliata al nostro caso specifico è fornita
-in \ref{sec:results}.
+\subsection{\label{sec:bisenet}Algoritmo II}
 
-\subsection{Algoritmo II: BiSeNet}
+Capito il funzionamento di un generico modello di
+{\it semantic segmentation}, seppure ogni architettura sia poi
+possa avere nel merito differenze più o meno significative,
+possiamo andare a vedere nel dettaglio quella scelta per 
+questo specifico caso, ovvero la rete BiseNet \cite{bisenet}.
 
-Quelle appena descritte erano le basi generiche del funzionamento
-di un modello di deep learning.
-Tuttavia le scelte da eseguire in merito sono molteplici, e tra i vari
-passaggi possono essere inserite molte variazioni più o meno
-significative per ricavare un modello più vicino alle nostre esigenze.
-In particolare abbiamo parlato di come la scelta della {\it backbone},
-e conseguentemente quindi l'intera procedura di {\it feature extraction},
-giochi un ruolo fondamentale nelle prestazioni che si ottengono da un modello.
-
-Se volessimo infatti solo classificare le aree di interesse nel modo
-più accurato possibile, magari in un momento distaccato come visto
-nel primo approccio, potremmo procedere come appena descritto perché il
-procedimento risulterebbe non più lento e la qualità delle predizioni
-potrebbe addirittura essere superiori.
-Volendo però ottenere tempi inferiori a quelli descritti in
-precedenza, non solo inferiori alla decina di secondi ma possibilmente
-molto inferiori al secondo, questo non è possibile.
-
-Il modello scelto si chiama {\it BiSeNet}\cite{bisenet}, acronimo di
-{\it Bilateral Segmentation Network}, che prende il nome per via
+{\it BiSeNet}\cite{bisenet}, acronimo di
+{\it Bilateral Segmentation Network}, prende il nome per via
 della sua architettura interna che si dirama in due parti.
-Come discusso, la scelta della {\it backbone} di un modello, e più
-precisamente delle caratteristiche che puo' offrire,
-porta con sé grosse implicazioni sul tipo di prestazioni che si
-possono ottenere.
-Questo dipende anche dal fatto che le {\it backbone} stesse possono
-essere costruitre per ottenere un dato risultato piuttosto che un
-altro.
-In alcuni casi architetture più pesanti, facendo uso di molti
-livelli convoluzionali detti a piramide riescono a comprimere
-con efficacia l'informazione presente nell'immagine,
-tentando di compensare la lentezza andando ad operare su un
-input di dimensioni ridotte, che comporta di per sè una perdita
-di informazione.
-Altre invece fanno uso di {\it pooling} aggressivi, che riducono
-velocemente la dimensione dell'input e codificano meglio
-dettagli di alto livello e sono quindi veloci ad elaborarlo.
+Come discusso in precedenza la caratteristica fondamentale
+delle reti neurali che le rende così accurate nel riconoscere
+le immagini è la fase di estrazione delle {\it features} che avviene
+tramite filtri convoluzionali e pooling.
+Un filtro convoluzionale puo' avere varie caratteristiche,
+tra cui la sua dimensione, la sua profondità, il suo {\it stride},
+ovvero quanto si sposta in orizzontale o in verticale ad ogni
+iterazione, e la sua {\it padding}, ovvero se si aggiungono
+zeri intorno all'immagine per farla avere dimensioni multipli
+della dimensione del filtro, ma soprattuo il numero di filtri da
+applicare.
+In linea generale si ha che con un numero più elevato di filtri
+le prestazioni siano migliori, ma anche che il processo
+sia più pesante computazionalmente parlando e dunque più
+lento, cosa che va tenuta in considerazione nel momento in cui 
+si tenti, come nel nostro caso, di realizzare un sistema che funzioni
+in tempo reale.
+
 
 \begin{figure}
     \center
@@ -434,25 +381,48 @@ dettagli di alto livello e sono quindi veloci ad elaborarlo.
     \caption{\label{fig:bisenet}Visualizzazione ad alto livello dell'architettura di BiSeNet. Fonte: researchgate.net}
 \end{figure}
 
-È quindi evidente che oltre una scelta in termini di rapidità
-vi è anche da considerare che tipo di informazione si stia cercando
-di estrarre dall'immagine, ma pare subito evidente che per una
-classificazione realmente soddisfacente puo' risultare necessario
-utilizzare entrambi.
-BiSeNet quindi implica entrambe le strategie, con quelle che sono
-dette {\it Spatial Path} e {\it Context Path}.
-Nel primo caso si utilizzano un numero elevato di livelli
-convoluzionali per codificare quanta più informazione spaziale possibile,
-nel secondo caso si comprime l'informazione di alto livellot tramite
-meccanismi di pooling e filtri convoluzionali di dimensione ridotta.
-L'output della {\it Context Path} viene poi sottoposto a dei
-meccanismi di attenzione per selezionare quali dettagli di alto
-livello tra quelli catturati possa essere il più rilevante, e
-e successivamente tramite quel che è detto {\it Feature Fusion
-Module} viene unito all'output della {\it Spatial Path}, che
-in questa fase svolge il ruolo della testa.
-L'output viene dunque riscalato in modo da avere dimensioni
-uguali a quelle proposte in input.
+In letteratura si ha che per architetture più veloci, che tentano
+di raccogliere più informazioni di alto livello a scapito di quelle
+specifiche e locali, si utilizzino tali filtri in maniera ridotta,
+preferendo la codifica delle informazioni tramite l'uso più esteso
+di livelli di pooling, mentre in contesti in cui si cerca di
+cogliere in maniera più fine i dettagli si utilizzino di più i filtri.
+BiSeNet tenta di fondere i due approcci, utilizzando un primo ramo
+che è chiamato {\it context path} (CP) e che si occupa di estrarre
+informazioni di alto livello, e un secondo ramo che è chiamato
+{\it spatial path} (SP) e che si occupa invece di estrarre informazioni
+di basso livello, utilizzando le tecniche detto per ora.
+Infine i due rami vengono uniti tramite dei
+{\it feature fusion module} (FFM) e degli
+{\it attention refinement module}.
+Il secondo si occupa di unire più stadi della CP al fine di ottenerne
+uno finale più accurato, tramite dei meccanismi di attenzione che sono
+una tecnica auto-supervisione dei modelli per apprendere quali 
+informazioni tra quelle estratte siano più rilevanti di altre,
+mentre il primo esegue varie operazioni matematiche tra i due
+risultati, tipo la somma o il prodotto componente per componente, 
+in modo da ottenre un unico risultato finale.
+Questo risultato viene infine valutato e ridimensionato in modo
+da ottenere una dimensione pari a quella in ingresso.
+
+
+%% \begin{itemize}
+    %% \item Ridimensionamento a 800$\times$800
+    %% \item Ritaglio casuale di una porzione 600$\times$600
+    %% \item Rotazione 180° con probabilità $p=0.5$
+    %% \item Distorsione fotometrica casuale con probabilità $p=0.5$
+    %% \item Normalizzazione lungo le componenti RGB.
+%% \end{itemize}
+
+%% L'unica trasformazione finalizzata a migliorare il processo di
+%% {\it training} è la normalizzazione lungo le componenti RGB,
+%% che normalizza i canali in modo da avere media pari a
+%% $[123.7, 116.3, 103,5]$ e deviazione standard pari a
+%% $[58.4, 57.1, 57.4]$.
+%% Questo rende l'immagine in input più simile a quella che è
+%% la percezione dell'occhio umano, essendo le intensità percepite
+%% dei tre colori differenti tra loro.
+
 
 \section{\label{sec:Dataset}Dataset}
 
@@ -646,16 +616,16 @@ l'utilizzo del nostro modello.
     \center
     \begin{tabular}{||c|c|c|c||}
         \hline
-        Tipologia & Quantità & Descrizione & Dimensione (MB) \\
+        Tipologia & \# Campioni & \# Classi & Dimensione (MB) \\
         \hline
         \hline
-        Classificate & 10'662 & 23 classi & 3'960 \\
+        Classificate & 10'662 & 23 & 3'960 \\
         \hline
-        Segmentate & 1'000 & Solo polipi & 57 \\
+        Segmentate & 1'000 & 1 (Polyp) & 57 \\
         \hline
-        Non annotate & 99'417 & Non annotate & 29'940 \\
+        Non annotate & 99'417 & 0 & 29'940 \\
         \hline
-        Video & 374 & 30 classi di appartenenza & 32'539 \\
+        Video & 374 & 30 & 32'539 \\
         \hline
         \hline
         Totale & 111'453 & --- & 66'496 \\
@@ -664,8 +634,8 @@ l'utilizzo del nostro modello.
     \caption{\label{tab:hyperkvasir}Composizione del dataset HyperKvasir}
 \end{table}
 
-È ovviamente improprio l'utilizzo di un dataset riportante
-classi diverse da quelle che si possono riscontrare nel 
+È ovviamente improprio l'utilizzo di un dataset che raffiguri
+oggetti diversi da quelli che si possono riscontrare nel 
 contesto di applicazione per l'addestramento del modello,
 tuttavia avendo a che fare con un numero di campioni
 relativo ad esso molto limitato si è scelto di utilizzarlo

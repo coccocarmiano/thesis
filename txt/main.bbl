@@ -10,6 +10,11 @@ Hanna Borgli, Vajira Thambawita, Pia~H Smedsrud, Steven Hicks, Debesh Jha,
   gastrointestinal endoscopy.
 \newblock {\em Scientific Data}, 7(1):283, 2020.
 
+\bibitem{mmdeploy}
+MMDeploy Contributors.
+\newblock Openmmlab's model deployment toolbox.
+\newblock \url{https://github.com/open-mmlab/mmdeploy}, 2021.
+
 \bibitem{imagenet}
 Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li~Fei-Fei.
 \newblock Imagenet: A large-scale hierarchical image database.

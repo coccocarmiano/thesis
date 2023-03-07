@@ -6,6 +6,9 @@
 **/*.tar.gz
 src/mmsegmentation/
 src/__pycache__
+**/__pycache__/
+src/app/__pycache__/
+
 
 # Latex
 txt/**/*.log
