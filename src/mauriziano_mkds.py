@@ -8,11 +8,6 @@ import scipy as sp
 from os import path as osp
 from PIL import Image
 
-DS_ROOT = "../data/mauri/dataset"
-SANE_DIR = osp.join(DS_ROOT, "sane_images")
-SICK_LABELED_DIR = osp.join(DS_ROOT, "segmented_images_labeled")
-SICK_UNLABELED_DIR = osp.join(DS_ROOT, "segmented_images_unlabeled")
-OUTDIR = "out"
 PALETTE = [20, 20, 240, 20, 240, 20]
 
 
@@ -21,15 +16,6 @@ def cut(img):
     img = img[:, :w * 2 // 3, :]
     img = img[45:-55, 40:-10, :]
     return img
-
-
-def clean_dirs():
-    cwd = osp.dirname(__file__)
-    out = osp.join(cwd, "..", "data", "mauri", OUTDIR)
-    if osp.exists(out):
-        shutil.rmtree(out)
-    os.mkdir(out)
-    return out
 
 
 def outline_mask(img):
@@ -51,68 +37,59 @@ def outline_mask(img):
     mask = sp.ndimage.binary_erosion(mask,
                                      iterations=5)  # Remove the green border
 
+    if mask.sum() == 0:
+        raise ValueError("No mask found")
+
     return mask
 
 
 if __name__ == "__main__":
-    sane_files = os.listdir(SANE_DIR)
-    sick_labeled_files = os.listdir(SICK_LABELED_DIR)
-    sick_unlabeled_files = os.listdir(SICK_UNLABELED_DIR)
+    data_dir_labeled = "../data/mauri/labeled"
+    data_dir_unlabeled = "../data/mauri/unlabeled"
+    data_dir_masks = "../data/mauri/masks"
+    data_out = "../data/mauri/images"
 
-    sane_files = [file for file in sane_files if file.endswith(".jpg")]
-    sick_labeled_files = [
-        file for file in sick_labeled_files if file.endswith(".jpg")
-    ]
-    sick_unlabeled_files = [
-        file for file in sick_unlabeled_files if file.endswith(".jpg")
-    ]
+    if os.path.isdir(data_dir_masks):
+        shutil.rmtree(data_dir_masks)
+    os.mkdir(data_dir_masks)
 
-    output_dir = clean_dirs()
+    if os.path.isdir(data_out):
+        shutil.rmtree(data_out)
+    os.mkdir(data_out)
 
-    print("Sane Images:", len(sane_files))
-    print("Sick Labeled Images:", len(sick_labeled_files))
-    print("Sick Unlabeled Images:", len(sick_unlabeled_files))
+    labeled_files = [file for file in os.listdir(
+        data_dir_labeled) if file.endswith(".jpg")]
 
-    cnt = 0
+    unlabeled_files = [file for file in os.listdir(
+        data_dir_unlabeled)]
+    unlabeled_files = [
+        file for file in unlabeled_files if file in labeled_files]
 
-    for file in tqdm.tqdm(sick_labeled_files):
-        if file not in sick_unlabeled_files:
-            print(f"File {file} is in labeled but not in unlabeled")
-            continue
-        t1 = osp.join(SICK_LABELED_DIR, file)
-        t2 = osp.join(SICK_UNLABELED_DIR, file)
+    val_txt = open("../data/mauri/splits/val.txt", "w")
+    test_txt = open("../data/mauri/splits/test.txt", "w")
+    pick_split = [val_txt, test_txt, test_txt]
 
-        lsick = cut(np.array(Image.open(t1)))
-        usick = cut(np.array(Image.open(t2)))
-        mask = outline_mask(lsick)
-        mask = mask.astype(np.uint8)
+    for idx, file in enumerate(tqdm.tqdm(labeled_files)):
+        src_path = osp.join(data_dir_labeled, file)
+        dst_path = osp.join(data_dir_masks, f"{idx}.png")
 
-        mask = Image.fromarray(mask).convert("P")
+        img = np.array(Image.open(src_path))
+        img = cut(img)
+        try:
+            mask = outline_mask(img)
+        except ValueError:
+            print(f"File {file} has no mask")
+        mask = mask.astype(np.uint8) * 255
+        mask = Image.fromarray(mask)
         mask.putpalette(PALETTE)
+        mask.save(dst_path)
 
-        img = Image.fromarray(usick)
+        src_path = osp.join(data_dir_unlabeled, file)
+        img = Image.open(src_path)
+        img = cut(np.array(img))
+        img = Image.fromarray(img)
+        dst_path = osp.join(data_out, f"{idx}.jpg")
+        img.save(dst_path)
 
-        mask_out = osp.join(output_dir, f"{cnt}.png")
-        img_out = osp.join(output_dir, f"{cnt}.jpg")
-
-        mask.save(mask_out)
-        img.save(img_out)
-
-        cnt += 1
-
-    # cnt = 0
-    # blank = cut(np.array(Image.open(osp.join(SANE_DIR, sane_files[0]))))
-    # h, w = blank.shape[:2]
-    # blank = np.zeros((h, w, 3), dtype=np.uint8)
-    # blank = Image.fromarray(blank).convert("P")
-    # blank.putpalette(PALETTE)
-
-    # for file in tqdm.tqdm(sane_files):
-    # inpath = osp.join(SANE_DIR, file)
-    # img = cut(np.array(Image.open(inpath)))
-    # img = Image.fromarray(img)
-
-    # img.save(osp.join(output_dir, f"{cnt}-sane.jpg"))
-    # blank.save(osp.join(output_dir, f"{cnt}-sane.png"))
-
-    # cnt += 1
+        f = pick_split[idx % len(pick_split)]
+        print(idx, file=f)
