@@ -42,8 +42,8 @@ class ThumbnailUpdater(QThread):
         print("Relesing video source", self.source)
         self.video_input.release()
 
-    def run(self):
-        pass
+    def __del__(self):
+        print(f"Closing video source {self.source}...")
 
 
 class VideoInputItem(QWidget):

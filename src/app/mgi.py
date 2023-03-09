@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import QWidget, QMainWindow, QLabel, QVBoxLayout, QHBoxLayo
 from PyQt5.QtGui import QPixmap, QImage, QFont
 from PyQt5.QtCore import pyqtSignal, QObject, QThread, QTimer, Qt, QBuffer
 import cv2
-from inferrer import Inferrer
 
 
 class VideoPoller(QThread):
@@ -19,22 +18,17 @@ class VideoPoller(QThread):
         super().__init__()
         self.video_input = None
         self.timer = QTimer(self)
-        self.timer.setInterval(0)
+        self.timer.setInterval(42)
         self.timer.timeout.connect(self.update_image)
         self.video_input = None
-        self.inferrer = Inferrer()
+        self.source_idx = None
 
-        self.__load_fake_mask()
         self.mask_width = 1
         self.mask_opacity = 50
-
-    def __load_fake_mask(self):
-        self.mask = np.array(Image.open("../data/fake-mask.png").convert("L"))
 
     def update_image(self):
         frame = self.poll_video_source()
         h, w, d = frame.shape
-        # mask = self.infer_mask(frame)
         qimg = QImage(frame, w, h, w * d,
                       QImage.Format_RGBA8888).scaled(1920 // 3, 1080 // 3)
         self.emit_qimg.emit(qimg)
@@ -47,20 +41,31 @@ class VideoPoller(QThread):
 
     def poll_video_source(self):
         _, frame = self.video_input.read()
+        n = 0
+        # self.timer.stop()
         while frame is None:
-            print("Frame is none")
+            # n += 1
+            print(f"Frame is none")
             self.connect_video()
-            _, frame = self.video_input.read()
+            return np.zeros((1080, 1920, 4), dtype=np.uint8)
+            # _, frame = self.video_input.read()
+
+            # if n > 10:
+            # raise Exception("Video source did not open")
+        print("Got a frame!")
+        # self.timer.start()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
         return frame
 
     def connect_video(self):
-        self.timer.stop()
+        print("Connecting source with idx", self.source_idx)
+        if self.video_input is not None:
+            self.video_input.release()
         self.video_input = cv2.VideoCapture(self.source_idx, cv2.CAP_V4L)
-        self.timer.start()
 
     def run(self):
         self.connect_video()
+        self.timer.start()
 
 
 class Controls(QWidget):
@@ -211,6 +216,6 @@ class GUISlider(QWidget):
     def setValue(self, value):
         self.slider.setValue(value)
 
-    @property
+    @ property
     def valueChanged(self):
         return self.slider.valueChanged
