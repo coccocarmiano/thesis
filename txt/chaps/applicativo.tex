@@ -68,5 +68,58 @@ libreria {\tt mmsegmentation} e installare le sue dipendenze.
 
 \section{Interfaccia}
 
+L'interfaccia è stata sviluppata tenendo a mente gli obiettivi
+funzionali preposti, ovvero la semplicità d'uso e la velocità
+nel processo di avvio.
+All'avvio dell'applicativo una prima interfaccia chiede di
+scegliere la sorgente video da utilizzare.
+L'accesso a una sorgente video avviene tramite richiesta
+al suo ID, che è un numero intero che lo identifica.
+Tali ID sono progressivi a partire da 0, ovvero il primo
+dispositivo ha ID uguale a 0.
+
+\begin{figure}[H]
+    \includegraphics[width=0.9\textwidth]{./assets/app-splashscreen.png}
+    \caption{\label{fig:app-splashscreen} Finestra selezione ingresso video}
+\end{figure}
+
+Questo passaggio è necessario poiché non è noto a priori
+quale sia l'ID dello strumento utilizzato dal personale medico,
+che dipende dall'ordine in cui i sistemi operativi assegnano
+questo ID all'accensione e al momento in cui il dispositivo
+viene collegato al computer.
+Per scegliere una sorgente video è sufficiente premere
+il bottone {\tt Usa} accanto al suo ID, e per facilitare
+tale operazione una piccola anteprima in tempo reale
+viene mostrata in corrispondenza di ogni sorgente video
+disponibile, come visibile in figura \ref{fig:app-splashscreen}.
+
+Questo step esclude dal processo di selezione le sorgenti video
+non valide o non disponibili.
+Sempre in figura \ref{fig:app-splashscreen} infatti notiamo come
+siano disponibili le sorgenti video 1 e 3, che corrispondono
+ai dispositivi video 0 e 2, siano riportati in questa
+finestra di selezione, mentre il dispositivo 1 e di conseguenza
+la sorgente video 2 non è selezionabile.
+Questo accade perché nella postazione di sviluppo dell'interfaccia
+il dispositivo 1 è in realtà un'interfaccia virtuale del
+dispositivo 0 e come tale non puo' essere impiegata per
+l'acquisizione di immagini.
+
+Selezionando una delle opzioni la finestra viene quindi chiusa
+e si apre una seconda finestra che mostra il video selezionato
+e dà l'accesso alle funzionalità dell'applicativo.
+Da questo momento l'applicativo è gia in funzione
+e al di sopra dell'uscita video vengono mostrare le predizioni
+del modello.
+Gli unici ulteriori controlli che l'utente puo' modificare a
+suo piacimento sono degli {\it slider} che permettono di
+regolare due parametri delle predizioni, che sono
+l'opacità e lo spessore della maschera creata.
+Questi due parametri sono stati resi modificabili in modo
+da poter scegliere una combinazione che risulti
+in maschere di predizioni visibili in modo chiaro e allo
+stesso tempo che non coprano porzioni troppo elevate di
+immagine o siano troppo distraenti.
 
 

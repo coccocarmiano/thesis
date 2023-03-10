@@ -406,23 +406,6 @@ Questo risultato viene infine valutato e ridimensionato in modo
 da ottenere una dimensione pari a quella in ingresso.
 
 
-%% \begin{itemize}
-    %% \item Ridimensionamento a 800$\times$800
-    %% \item Ritaglio casuale di una porzione 600$\times$600
-    %% \item Rotazione 180° con probabilità $p=0.5$
-    %% \item Distorsione fotometrica casuale con probabilità $p=0.5$
-    %% \item Normalizzazione lungo le componenti RGB.
-%% \end{itemize}
-
-%% L'unica trasformazione finalizzata a migliorare il processo di
-%% {\it training} è la normalizzazione lungo le componenti RGB,
-%% che normalizza i canali in modo da avere media pari a
-%% $[123.7, 116.3, 103,5]$ e deviazione standard pari a
-%% $[58.4, 57.1, 57.4]$.
-%% Questo rende l'immagine in input più simile a quella che è
-%% la percezione dell'occhio umano, essendo le intensità percepite
-%% dei tre colori differenti tra loro.
-
 
 \section{\label{sec:Dataset}Dataset}
 
@@ -456,64 +439,79 @@ annotate dall'Ospedale Mauriziano di Torino.
 
 \subsection{\label{sec:dataset-mauriziano}Il Dataset Mauriziano}
 
-Il dataset si compone di 113 immagini di esami endoscopici
-raccolte dall'ospedale Medico durante le loro attività,
-di cui 51 con aree patologiche e 62 senza.
-Si presentano come acquisizioni del macchinario I-Scan,
-e quindi sono immagini ad altissima risoluzione (1920$\times$1080 pixel).
+Il dataset si compone di 1194 immagini di esami endoscopici
+raccolte dall'ospedale Mauriziano durante le loro attività.
+Tuttavia, di queste oltre mille immagini, solo 49 sono
+di immagini patologiche, e di sole 38 si dispone sia
+dell'immagine annotata che dell'immagine originale.
+Si intende per immagine annotata un'immagine di cui sia
+indicata l'area patologica di interesse.
+Si presentano come acquisizioni del macchinario I-SCAN,
+e sono quindi immagini ad altissima risoluzione 
+(1920$\times$1080 pixel).
 Essendo però acquisizioni del macchinario, presentano anche
-una grandissima quantità di informazioni superflue o non utilizzabili,
-come grosse porzioni di immagini nere che in realtà fanno parte
-dell'interfaccia oppure una seconda visuale ausiliaria che non
-puo' essere impiegata al fine dell'addestramento del modello.
-Questo porta la porzione di immagine realmente utilizzabile
-a circa 1250$\times$1020, una risoluzione comunque molto
-elevata.
+una grandissima quantità di informazioni superflue o non 
+utilizzabili, tipo aree totalmente nere ed una seconda
+visuale ausiliaria per l'operatore.
+Le immagini vengono dunque ritagliate per lasciare la sola area
+di interesse e rimuovere alcuni dati sensibili come il nome
+del paziente da cui è stata prelevata l'acquisizione.
 
-Tuttavia, per una questione numerica, questo non puo' essere
-l'ultimo dataset impiegato.
-Delle 51 immagini patologiche annotate infatti di solo 
-18 si dispone anche dell'immagine originale non annotata.
-Va fatto notare che le annotazioni sono state eseguite in maniera
-{\it hard coded} sull'immagine, e non è quindi separabile dall'immagine
-originale.
-Questo non è un problema per l'addestramento del modello descritto
-nella sezione \ref{sec:shallow-learning} in quanto la conversione
-dell'immagine in scala di grigi e l'utilizzo di porzioni di immagini
-molto ridotte non permette al modello di discriminare le ROI
-in base alla presenza o meno di questa annotazione.
-Nel caso del modello descritto nella sezione \ref{sec:deep-learning}
-invece è molto possibile che il modello impari a proporre le ROI,
-se non direttamente a classificarle in base alla presenza
-dell'annotazione, in quanto sarebbe in grado di riconoscere
-la differenza di colore e discriminare le ROI in base a questo.
+Le immagini annotate presentano un tipo di segmentazione nota
+come {\it hard-coded}, ovvero la traccia dell'area di interesse
+non è un file separato riportante istruzioni su come ricreare
+la maschera oppure una {\it bitmap} dell'area di interesse,
+bensì sono state fornite le immagini non ritagliate e
+le immagini su cui è stata disegnata manualmente la maschera.
+In alcuni casi, come ad esempio quello del modello discusso
+in \ref{sec:shallow-learning}, questo non è un problema.
+È tuttavia noto che le reti neurali siano in grado di trovare
+scorciatoie per ottenere risultati migliori, in questo caso
+ad esempio andando a cogliere piccole irregolarità residue
+in un'immagine generata tramite elaborazione di una con
+l'acquisizione.
+È quindi necessario utilizzare entrambe le foto per ottenre
+un'annotazione separata da poter applicare all'immagine non
+alterata.
 
 \begin{figure}[h]
     \center
-    \includegraphics[width=0.9\textwidth,trim=5.0cm 5cm 6cm 6.0cm,clip]{./assets/cutout.png}
-    \caption{\label{fig:cutout}Processo di estrazione di una ROI. Da sinistra a destra:
-    Immagine originale, maschera calcolata, visualizzazione della sola area patologica
-    }
+    \includegraphics[width=0.9\textwidth]{./assets/cutout2.png}
+    \caption{\label{fig:cutout}Processo di estrazione delle maschere.
+    In senso orario: immagine annotata, maschera calcolata, immagine originale,
+    ipotetico ritaglio della sola parte patologica.}
 \end{figure}
 
-La creazione della maschera è possibile tramite delle semplici
-considerazioni sulla natura delle annotazioni, in quanto sono
-state fatte con l'utilizzo di un verde tipicamente ad alto
-contrasto con il resto delle immagini.
-Per via di questa caratteristica è facile ottenere una prima
-{\it bitmap} del marchio apposto sulla foto.
-Successivamente si applicano in sequenza i seguenti operatori
-binari:
+Questo è possibile in modo molto facile grazie ad alcune
+considerazioni sul tipo di immagini e sulle annotazioni fornite.
+Notiamo infatti come si vede in figure \ref{fig:cutout} che 
+le annotazioni sono state fatte con un colore verde acceso.
+Uno script in Python si occupa, partendo da una maschera
+totalmente vuota, di andare a selezionare tutti i pixel
+che cadono in uno spettro di colori simile a quello del verde
+impiegato per l'annotazione.
+Si ottengono così uno o più anelli racchiudenti l'area di
+interesse.
+A tale anello viene poi applicata un'operatore morfologico
+di dilatazione, con lo scopo di chiudere eventuali piccoli
+buchi che altrimenti lo renderebbero un semianello.
+Fatto ciò non resta che applicare in sequenza un'operatore
+morfologico di chiusura, che si occupa di riempire
+l'area vacante al centro, ed uno di erosione, che serve
+a disfare la precedente operazione di dilatazione.
+Notiamo che a differenza del modell in \ref{sec:shallow-learning},
+qui l'annotazione non è una classificazione applicata all'intera
+area ma una {\it bitmap} che classifica il singolo pixel.
+Per questo motivo è assolutamente necessario che la maschera
+così calcolata venga salvata in formato {\it PNG} o
+un qualunque altro metodo che supporti metodi di
+compressione senza perdita, altrimenti si rischia di
+inquinare la maschera con informazioni errate se non
+addirittura inesistenti nel nostro problema di riferimento.
 
-\begin{itemize}
-    \item {\it Dilatazione}: chiusura di eventuali aree non congiunte
-    \item {\it Chiusura}: riempire il centro dell'annotazione
-    \item {\it Erosione} $\times$ 2: annullamento della precedente dilatazione
-    e restringimento della maschera all'interno dell'annotazione
-\end{itemize}
 
 Nel caso dell'algoritmo in \ref{sec:shallow-learning} dalle immagini
-elaborate vengono estratte ROI di dimensione 50 $\times$ 50 pixel,
+elaborate vengono estratte delle ROI di dimensione 50 $\times$ 50 pixel,
 con una sovrapposizione del 40\%, ovvero 20 pixel.
 Per aumentare la quantità di ROI patologiche di cui si è a disposizione
 esse vengono inoltre salvate anche rotate di 90°.
