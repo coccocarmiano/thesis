@@ -67,9 +67,14 @@ if __name__ == "__main__":
 
     val_txt = open("../data/mauri/splits/val.txt", "w")
     test_txt = open("../data/mauri/splits/test.txt", "w")
-    pick_split = [val_txt, test_txt, test_txt]
+    train_txt = open("../data/mauri/splits/train.txt", "w")
+    pick_split = [train_txt, train_txt, val_txt, test_txt]
 
     for idx, file in enumerate(tqdm.tqdm(labeled_files)):
+        if file not in unlabeled_files:
+            print(f"File {file} not found in unlabeled folder")
+            continue
+
         src_path = osp.join(data_dir_labeled, file)
         dst_path = osp.join(data_dir_masks, f"{idx}.png")
 
@@ -79,6 +84,7 @@ if __name__ == "__main__":
             mask = outline_mask(img)
         except ValueError:
             print(f"File {file} has no mask")
+            continue
         mask = mask.astype(np.uint8) * 255
         mask = Image.fromarray(mask)
         mask.putpalette(PALETTE)

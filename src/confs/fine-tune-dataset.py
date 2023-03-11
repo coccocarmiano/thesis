@@ -1,23 +1,33 @@
-# All models inherhit from a base in MMSeg
-_base_ = "./configs/bisenetv2/bisenetv2_fcn_4x8_1024x1024_160k_cityscapes.py"
+_base_ = "../mmsegmentation/configs/bisenetv2/bisenetv2_fcn_4x8_1024x1024_160k_cityscapes.py"
 num_classes = 1
 CLASSES = ("sane", "sick")
 PALETTE = [
     [40, 220, 40],
     [220, 40, 40],
 ]
-img_norm_cfg = dict(
-    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True
+lr_config = dict(
+    policy="step",
+    warmup=None,
+    min_lr=0.001,
+    step=[80, 120],
 )
+optimizer = dict(
+    lr=0.001,
+)
+img_norm_cfg = dict(mean=[123.675, 116.28, 103.53],
+                    std=[58.395, 57.12, 57.375],
+                    to_rgb=True)
 norm_cfg = dict(type="BN", requires_grad=True)
-dataset_type = "MGI-Mauriziano"
+dataset_type = "FineTuneDataset"
 gpu_ids = [0]
 seed = 0
 device = "cuda"
 model = dict(
     decode_head=dict(
         norm_cfg=norm_cfg,
-        loss_decode=dict(type="CrossEntropyLoss", use_sigmoid=True, loss_weight=1.0),
+        loss_decode=dict(type="CrossEntropyLoss",
+                         use_sigmoid=True,
+                         loss_weight=1.0),
         out_channels=num_classes,
         num_classes=num_classes,
     ),
@@ -93,7 +103,7 @@ model = dict(
     ],
 )
 
-work_dir = "test_output"
+work_dir = "output_finetune"
 
 train_pipeline = [
     dict(type="LoadImageFromFile"),
@@ -128,30 +138,30 @@ data = dict(
     samples_per_gpu=4,
     workers_per_gpu=2,
     train=dict(
-        type="MGI-Mauriziano",
-        data_root="../../data/mauri/",
-        img_dir="out/",
-        ann_dir="out/",
+        type="FineTuneDataset",
+        data_root="../data/mauri/",
+        img_dir="images",
+        ann_dir="masks",
         img_suffix=".jpg",
         seg_map_suffix=".png",
         split="splits/train.txt",
         pipeline=train_pipeline,
     ),
     val=dict(
-        type="MGI-Mauriziano",
-        data_root="../dataset",
-        img_dir="out/",
-        ann_dir="out/",
+        type="FineTuneDataset",
+        data_root="../data/mauri/",
+        img_dir="images/",
+        ann_dir="masks/",
         img_suffix=".jpg",
         seg_map_suffix=".png",
         split="splits/val.txt",
         pipeline=test_pipeline,
     ),
     test=dict(
-        type="MGI-Mauriziano",
-        data_root="../dataset",
-        img_dir="out/",
-        ann_dir="out/",
+        type="FineTuneDataset",
+        data_root="../data/mauri/",
+        img_dir="images/",
+        ann_dir="masks/",
         img_suffix=".jpg",
         seg_map_suffix=".png",
         split="splits/test.txt",
@@ -160,17 +170,17 @@ data = dict(
 )
 
 checkpoint_config = dict(
-    interval=100,
+    interval=200,
     meta=dict(
         CLASSES=CLASSES,
         PALETTE=PALETTE,
-    )
+    ))
+evaluation = dict(
+    interval=200,
 )
-
-evaluation=dict(
-    interval=100,
-)
-
-runner=dict(
+runner = dict(
     max_iters=2000,
+)
+log_config = dict(
+    interval=200,
 )

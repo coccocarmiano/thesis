@@ -205,11 +205,11 @@ essere apprezzato dall'occhio umano.
         \hline
         Split & Immagini \\
         \hline
-        Train & ? \\
-        Test & ? \\
-        Validation & ? \\
+        Train & 18 \\
+        Test & 10 \\
+        Validation & 9 \\
         \hline
-        Totale & 49 \\
+        Totale & 37 \\
         \hline
     \end{tabular}
     \caption{\label{tab:mauriziano-ii}Divisione del dataset Mauriziano per
@@ -848,7 +848,8 @@ Si sceglie come metrica discrimante la precisione e non
 l'IoU perché essendo le due classi diverse è più
 ragionevole l'utilizzo della prima.
 Nella fase di {\it fine-tuning} si utilizza un learning-rate
-costante pari a $0.001$.
+costante pari a $0.001$, il numero di iterazioni è pari a
+$2.000$ e se ne salva un {\it checkpoint} ogni $200$ iterazioni.
 Alla fine di questa fase viene prelevato nuovamente il modello
 con la migliore accuracy sempre valutata sulla porzione di test
 della tabella \ref{tab:mauriziano-ii}.
@@ -943,6 +944,20 @@ Questo numero non si discosta eccessivamente
 dai valori di precisone e di richiamo,
 lasciando indicare una reale difficoltà
 del modello nel distinguere tra le due classi.
+Un esempio di queste prestazioni altalenanti
+è visibile nell'immagine \ref{fig:shallow-bad}.
+
+\begin{figure}
+    %% \includegraphics[0.9\textwidth]{./assets/shallow-bad.png}
+    \includegraphics[width=\textwidth]{./assets/shallow-bad.png}
+    \caption{\label{fig:shallow-bad}Esempi di errori grossolani
+    nel modello di shallow learning.\\
+    Sinistra: immagine patologica, eccesiva regione evidenziata; \\
+    Destra: immagnie sana, enormi zone patologiche evidenziate;
+    }
+\end{figure}
+
+
 Queste prestazioni congiuntamente al lungo
 tempo di elaborazione, circa 10 secondi per un
 fotogramma, lo rendono difficilmente utilizzabile
@@ -960,4 +975,88 @@ Un miglioramento di queste API e un futuro
 sviluppo sulle prestazioni potrebbe
 rendere appetibile questo tipo di
 modello.
+
+Passiamo ora invece al modello di {\it deep-
+learning}.
+In tabella \ref{tab:deep-learning-results}
+si riportano i risultati ottenuti sulle
+immagini di test della tabella
+\ref{tab:mauriziano-ii} dai migliori tre
+checkpoint ottenuti durante il training,
+prima e dopo il {\it fine-tuning} con
+le immagini di training, assieme anche
+al numero di iterazione cui sono
+stati prelevati.
+L'impiego di più {\it checkpoint} in
+questa fase è per valutare la pervasitvità
+del {\it transfer learning} nel caso di
+malattie gastro-intestinali diverse
+e i miglioramenti ottenuti dopo il
+{\it fine-tuning}.
+
+\begin{table}
+    \begin{tabular}{||c|c|c|c||}
+    \hline
+    Checkpoint & Iterazione & IoU & Accuracy \\
+    \hline
+    \hline
+    \multicolumn{4}{||c||}{Prima del fine-tuning} \\
+    \hline
+    C1 & ??? & ??? & ??? \\
+    C2 & ??? & ??? & ??? \\
+    C3 & ??? & ??? & ??? \\
+    \hline
+    \multicolumn{4}{||c||}{Dopo fine-tuning} \\
+    \hline
+    C1 & ??? & ??? & ??? \\
+    C2 & ??? & ??? & ??? \\
+    C3 & ??? & ??? & ??? \\
+    \hline
+    \end{tabular}
+    \caption{\label{tab:deep-learning-results}
+    Risultati del modello di deep-learning.}
+\end{table}
+
+Dai risultati dei {\it checkpoint } prima
+del {\it fine-tuning} si nota come il
+modello abbia in qualche modo imparato
+a distinguere tra le due classi.
+Questo è probabilmente dovuto
+non tanto all'aver appreso la
+distribuzione della classe patologica
+tanto quanto l'aver appreso quella
+della classe sana, e quindi in
+maniera collaterale riesca in qualche
+misura a distinguere anche un problema
+di cui non è a conoscenza.
+I bassi risultati di IoU invece
+sono del tutto giustificabili dall'
+aver appreso a modellare delle maschere
+basandosi su RoI totalmente differenti
+da quelle del problema.
+Si nota tuttavia come questa tecnica abbia
+degli evidenti limiti:
+se infatti il modello è stato libero
+di apprendere per $80'000$ iterazioni,
+i risultati più consistenti si trovano
+tutti ad un numero di iterazioni molto
+basso, a differenza della fase di
+{\it fine-tuning} dove i risultati
+migliori si ottengono verso le iterazioni
+finali del training come ci si aspetterebbe,
+in quanto questo costuituisce il metodo più
+classico per eseguire l'allenamento di un
+modello.
+L'inferenza, svolta su una singola GPU
+NVIDIA Tesla T4 Tensor, procede ad una media
+di {\bf ???} FPS per le immagini del
+dataset HyperKvasir e di {\bf ???} FPS
+per il dataset Mauriziano, quindi
+sufficientemente veloce da essere considerata
+una classificazione in tempo reale e comunque
+al di sopra di 24 FPS, che potremmo
+considerare come il limite minimo
+di una prestazione accettabile.
+
+
 

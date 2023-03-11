@@ -94,7 +94,7 @@ model = dict(
     ],
 )
 
-work_dir = "test_output"
+work_dir = "output"
 
 train_pipeline = [
     dict(type="LoadImageFromFile"),
@@ -170,7 +170,7 @@ evaluation = dict(
     interval=2000
 )
 runner = dict(
-    max_iters=160_000
+    max_iters=80_000
 )
 log_config = dict(
     interval=2000
@@ -179,5 +179,5 @@ evaluation = dict(
     interval=2000
 )
 checkpoint_config = dict(
-    interval=400
+    interval=2000
 )
