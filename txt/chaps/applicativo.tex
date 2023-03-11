@@ -105,32 +105,38 @@ che una nuova richiesta venga inviata non appena la precedente
 \section{Interfaccia}
 
 L'interfaccia è stata sviluppata tenendo a mente gli obiettivi
-funzionali preposti, ovvero la semplicità d'uso e la velocità
-nel processo di avvio.
-All'avvio dell'applicativo una prima interfaccia chiede di
-scegliere la sorgente video da utilizzare.
-L'accesso a una sorgente video avviene tramite richiesta
-al suo ID, che è un numero intero che lo identifica.
-Tali ID sono progressivi a partire da 0, ovvero il primo
-dispositivo ha ID uguale a 0.
+funzionali preposti, dove ci si aspetta una fase di 
+setup iniziale ridotta e conseguentemente un numero di interazioni
+ridotte se non nulle al di fuori di guardare le predizioni
+del modello.
+All'avvio dell'applicazione viene mostrata una prima finestra
+che richiede all'utente di selezionare la sorgente video
+da utilizzare per catturare i fotogrammi.
+Per catturare i fotogrammi è stata utilizzata la libreria
+{\tt OpenCV} con la quale è possibile accedere a una sorgente
+video tramite un ID numerico.
+Questa prima fase dove si richiede di scegliere la sorgente
+è dunque necessaria poiché non è possibile sapere a priori
+quale sia la sorgente video da utilizzare, in quanto
+più dispositivi video potrebbero essere collegati al computer
+oppure a seconda dell'ordine in cui i sistemi operativi
+assegnano l'ID alle sorgenti video questi potrebbero
+essere diversi da quello che si aspetta.
 
 \begin{figure}[H]
     \includegraphics[width=0.9\textwidth]{./assets/app-splashscreen.png}
     \caption{\label{fig:app-splashscreen} Finestra selezione ingresso video}
 \end{figure}
 
-Questo passaggio è necessario poiché non è noto a priori
-quale sia l'ID dello strumento utilizzato dal personale medico,
-che dipende dall'ordine in cui i sistemi operativi assegnano
-questo ID all'accensione e al momento in cui il dispositivo
-viene collegato al computer.
-Per scegliere una sorgente video è sufficiente premere
-il bottone {\tt Usa} accanto al suo ID, e per facilitare
-tale operazione una piccola anteprima in tempo reale
-viene mostrata in corrispondenza di ogni sorgente video
-disponibile, come visibile in figura \ref{fig:app-splashscreen}.
+Per facilitare questa operazione viene quindi mostrato
+accanto ad ogni possibile opzione una piccola anteprima
+della sorgente video, in modo da poter scegliere quella
+corretta.
+Individuata l'entrata corretta, è sufficiente premere il
+bottone "Usa" messo accanto, come visibile in 
+figura \ref{fig:app-splashscreen}.
 
-Questo step esclude dal processo di selezione le sorgenti video
+Questa fase esclude dal processo di selezione le sorgenti video
 non valide o non disponibili.
 Sempre in figura \ref{fig:app-splashscreen} infatti notiamo come
 siano disponibili le sorgenti video 1 e 3, che corrispondono
@@ -158,4 +164,14 @@ in maschere di predizioni visibili in modo chiaro e allo
 stesso tempo che non coprano porzioni troppo elevate di
 immagine o siano troppo distraenti.
 
-
+A fini dimostrativi il colore per le predizioni è stato 
+impostato  come un rosso acceso.
+Tuttavia una scelta migliore è probabilmente quella di
+utilizzare un colore che abbia più contrasto con quelli
+che solitamente vengono visualizzati nelle immagini,
+ovvero un verde acceso.
+Non si è optato per questa decisione in quanto il video
+generato per la dimostrazione utilizza le immagini
+annotate e quindi creerebbe confusione, ma il cambio
+del colore delle annotazione è una semplice modifica
+di poco conto.

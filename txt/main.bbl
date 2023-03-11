@@ -21,6 +21,10 @@ Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li~Fei-Fei.
 \newblock In {\em 2009 IEEE conference on computer vision and pattern
   recognition}, pages 248--255. Ieee, 2009.
 
+\bibitem{radiomics}
+Joost~J.M et~al.
+\newblock Pyradiomics, a library for clinical image processing, 2017.
+
 \bibitem{ilpaper}
 Siripoppohn~V. et~al.
 \newblock Real-time semantic segmentation of gastric intestinal metaplasia

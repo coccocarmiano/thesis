@@ -218,7 +218,7 @@ essere apprezzato dall'occhio umano.
 
 
 
-\subsection{Il Dataset HyperKvasir}
+\subsection{\label{sec:dataset-hyperkvasir}Il Dataset HyperKvasir}
 
 Il dataset HyperKvaris\cite{HyperKvasirDataset} nasce per sopperire
 alla mancanza di dati medici per lo studio e l'addestramento
@@ -346,7 +346,7 @@ vettore unidimensionale o uno scalare.
     \includegraphics[width=0.9\textwidth]{./assets/semseg.jpg}
     \caption{\label{fig:semseg}Esempio di Semantic Segmentation applicata 
     al riconoscimento di oggetti stradali. 
-    Fonte: https://towardsai.net/p/l/machine-learning-7}
+    Fonte: https://towardsai.net/}
 \end{figure}
 
 Il problema che si tenta di risolvere è denominato
@@ -372,7 +372,7 @@ Questo è dovuto al fatto che i dataset impiegati, spiegati nel dettaglio in
 zone sane e sfondo.
 
 
-\subsection{\label{sec:shallow-learning}Tecniche Shallow Learning: Alberi Decisionali}
+\subsection{\label{sec:shallow-learning}Modello a Foresta Casuale}
 
 Il nostro primo modello di riferimento\cite{Toma2022} è basato su
 alberi decisionali, modelli molto popolari nel mondo del machine learning
@@ -540,7 +540,7 @@ parzialmente sovrapposta cui ha avuto accesso in fase di train.
 \begin{figure}[h]
     \center
     \includegraphics[width=0.9\textwidth]{./assets/glrlm.jpg}
-    \caption{\label{fig:glrlm}Calcolo di una GLRLM a 3 livelli di grigio con angolo $\theta$ uguale a 0°, fonte: http://www.ajnr.org/content/36/7/1343/F2}
+    \caption{\label{fig:glrlm}Calcolo di una GLRLM a 3 livelli di grigio con angolo $\theta$ uguale a 0°. Fonte: http://www.ajnr.org/}
 \end{figure}
 
 A questo punto ogni ROI viene classificata e a partire da essa viene
@@ -654,7 +654,7 @@ il numero e la dimensione delle ROI estratte non è fisso.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\textwidth]{./assets/cnn.jpg}
-    \caption{\label{fig:cnn}Visualizzazione del processo di classificazione di un'immagine. Fonte: https://towardsdatascience.com/region-of-interest-pooling-f7c637f409af}
+    \caption{\label{fig:cnn}Visualizzazione del processo di classificazione di un'immagine. Fonte: https://towardsdatascience.com/}
 \end{figure}
 
 Le ROI estratte sono quindi sottoposte a una testa, detto livello
@@ -666,7 +666,9 @@ o meno, anche di riconoscere quale parte della ROI lo è, e dunque
 a livello globale debba apprendere non solo a riconoscere le zone
 anomale ma anche a tracciarne la maschera.
 
-\subsection{\label{sec:bisenet}Algoritmo II}
+
+
+\subsection{\label{sec:bisenet}Architettura BiSeNet}
 
 Capito il funzionamento di un generico modello di
 {\it semantic segmentation}, seppure ogni architettura sia poi
@@ -726,27 +728,236 @@ in modo da ottenre un unico risultato finale.
 Questo risultato viene infine valutato e ridimensionato in modo
 da ottenere una dimensione pari a quella in ingresso.
 
+\section{Training e Risultati}
+
+\subsection{Training}
+
+Il primo modello, descritto in \ref{sec:shallow-learning},
+viene allenato con tecnica di K-Fold Cross-Validation,
+dove si divide il dataset in $K-1$ sezioni e si esegue
+la validazione sulla restante parte.
+Il modello in questione ha vari parametri che possono
+essere impostati in fase di allenamento del modello.
+Essi sono il {\it learning rate}, che va a valutare
+al termine della costruzione di un albero come modificiare
+la divisione delle foglie nel successivo;
+Il numero massimo di alberi da impiegare nella costruzione
+della foresta, probabilmente il fattore più determinante
+del modello;
+la profondità massima che gli alberi possono raggiungere,
+che come vedremo nella sezione risultati al contrario
+del numero di albero non sembra essere particolaremnte
+influente;
+un fattore di normalizzazione utile a ridurre
+l'{\it overfitting} ed il {\it bias} verso la classe
+predominante.
+In ultimo, un fattore esterno ai parametri del modello
+viene applicato al dataset in ingresso.
+Per valutare quanto sia incidente la sproporzione
+nel numero di campioni delle due classi si è infatti
+adoperato un fattore di {\it over}-{\it under} sampling,
+con il quale si va a prendere per la sola classe patologica
+un numero di campioni minore o inferiore a quello disponibile.
+Nel caso questo fattore sia $> 1$, si parla di {\it sampling}
+con rimpiazzo, nel caso sia $< 1$ si parla invece di
+{\it under-sampling}.
+Nella ricerca dei parametri ottimali è stata impiegata
+la strategia di {\it grid-search}, ovvero provando tutte le
+possibili combinazioni di parametri tra quelle definite,
+che sono visibili nella tabella \ref{tab:grid-search}.
+Il training viene svolto su CPU.
+
+\begin{table}
+    \begin{tabular}[h]{||c|c||}
+    \hline
+    \textbf{Parametro} & \textbf{Valori} \\
+    \hline
+    \hline
+    \multirow{4}{*}{Learning Rate} & 0.01 \\
+    & 0.05 \\
+    & 0.1 \\
+    & 0.5 \\
+    \hline
+    \multirow{5}{*}{Numero Massimo Alberi} & 75 \\
+    & 100 \\
+    & 150 \\
+    & 200 \\
+    & 250 \\
+    \hline
+    \multirow{3}{*}{Profondità Massima} & 50 \\
+    & 100 \\
+    & 150 \\
+    \hline
+    \multirow{3}{*}{Fattore Regolarizzazione} & 0.1 \\
+    & 0.5 \\
+    & 1.0 \\
+    \hline
+    \multirow{3}{*}{Fattore di Sampling} & 0.9 \\
+    & 1.0 \\
+    & 1.1 \\
+    \hline
+    \hline
+    Totale Possibili Combinazioni & 540 \\
+    \hline
+    \end{tabular}
+    \caption{\label{tab:grid-search}Parametri utilizzati nella grid-search}
+\end{table}
+
+L'ottimizzazione dei parametri per il modello descritto in
+\ref{sec:deep-learning} è invece basata su {\it Stochastic
+Gradient Descent} (SGD) con apprendimento adattivo.
+La formulazione dell'aggiornamento dei pesi dopo
+un'iterazione del modello è data da:
+
+\begin{equation}
+    w(t) = \beta w(t-1) + (1-\beta) \eta(t)(\frac{\partial L}{\partial w}-\lambda w(t-1))
+    \label{eq:sgd}
+\end{equation}
+
+Il termine $w(t)$ indica i pesi del modello alla $t$-esima
+iterazione.
+Il termine $\beta$ è il parametro di {\it momentum} che
+è impostato a $0.9$, mentre $\eta(t)$ è il {\it learning-rate},
+che è una funzione del tempo in quanto esso ha un valore 
+fissato a 0.5 con {\it warm-up} lineare per le prime $1000$
+iterazioni e successivamente ha un'andamento polinomaile
+con potenza $0.9$, fino a un minimo di $10\times 10^{-4}$.
+L'allenamento è compiuto su una singola GPU con un numero
+di campioni per GPU pari a 8, che da una {\it batch-size}
+pari a 8.
+Il termine $\displaystyle \frac{\partial L}{\partial w}$ è
+il termine di perdita calcolato sull'intero {\it batch} di
+dati, che viene calcolato mediante la funzione di perdita
+{\it Cross-Entropy} (CE) con l'utilizzo dell'operatore
+sigmoide.
+Si intende per iterazione uno {\it step} di dimensione
+pari a {\it batch-size} numero di campioni.
+Il training in questa fase viene svolto sul dataset HyperKvasir
+descritto in \ref{sec:dataset-hyperkvasir} per $80.000$ iterazioni,
+usando come dataset di validazione quello ribortato in tabella
+\ref{tab:mauriziano-ii}, eseguito ad intervalli regolari di
+$2.500$ iterazioni in cui si va a valutare la precisione
+in termini di {\it Intersection over Union} (IoU) e
+la precisione in termini percentuali, salvando
+di volta in volta un {\it checkpoint} del modello.
+Dopo le iniziali $80'000$ iterazioni, viene selezionato
+il modello con la accuracy maggiore e viene sottoposto
+ad una fase di {\it fine-tuning} sulle immagini di
+training di cui alla tabella \ref{tab:mauriziano-ii}.
+Si sceglie come metrica discrimante la precisione e non
+l'IoU perché essendo le due classi diverse è più
+ragionevole l'utilizzo della prima.
+Nella fase di {\it fine-tuning} si utilizza un learning-rate
+costante pari a $0.001$.
+Alla fine di questa fase viene prelevato nuovamente il modello
+con la migliore accuracy sempre valutata sulla porzione di test
+della tabella \ref{tab:mauriziano-ii}.
+In entrambe le fasi vengono applicate all'immagine in ingresso
+le trasformazioni, volte ad aumentare la quantità e l
+variabilità dei dati descritte nella tabella
+\ref{tab:data-augmentation}.
+
+\begin{table}
+   \begin{tabular}[h]{||c|c|c|c||}
+    \hline
+    Trasformazione & Probabilità & Valore & Split \\ 
+    \hline
+    \hline
+    \multirow{2}{*}{Resize} & \multirow{2}{*}{1.0} & \multirow{2}{*}{800$\times$600 px} & Test \\
+    & & & Train \\
+    \hline
+    Rotazione & 0.5 & 180° & Train \\
+    \hline
+    \multirow{2}{*}{Normalizzazione} & \multirow{2}{*}{1.0} & $\mu = [123, 116, 103]$ & Test \\
+    & & $\sigma = [58, 57, 57]$ & Train \\
+    \hline
+    Luminosità Casuale & 0.5 & 0.5 & Train \\
+    \hline
+    Contrasto Casuale & 0.5 & 0.5 & Train \\
+    \hline
+    Saturazione Casuale & 0.5 & 0.5 & Train \\
+    \hline
+   \end{tabular} 
+   \caption{\label{tab:data-augmentation}Trasformazioni applicate alle immagini}
+\end{table}
 
 
+\subsection{\label{sec:results}Risultati}
 
-%% \begin{table}
-    %% \center
-    %% \begin{tabular}{||c|c|c|c|c||}
-        %% \hline
-        %% & W < 400 & 400 < W < 600 & 600 < W < 800 & W > 800 \\ 
-        %% \hline
-        %% H < 400 &  &  &  & \\ 
-        %% \hline
-        %% 400 < H < 800 &  &  &  & \\ 
-        %% \hline
-        %% 600 < H < 800  &  &  &  & \\ 
-        %% \hline
-        %% H > 800 & &  &  & \\ 
-        %% \hline
-    %% \end{tabular}
-%% \end{table}
+In questa fase riportiamo i risultati numerici dei modelli.
+Per il modello di {\it shallow-learning} si riportano
+i risultati dei 5 modelli che hanno ottenuto la migliore
+prestazione secondo l'F1-Score per la sola classe patologica.
+F1 è una metrica che cerca di bilanciare i risultati di
+precisione e di richiamo.
+Se da un lato infatti è desiderabile un modello ad alto richiamo,
+ovvero che sia in grado di individuare tutte le aree
+potenzialmente patologiche presenti nell'immagine, dall'altro
+è desiderabile che questo obiettivo non venga raggiunto
+classificando con eccessiva leggerezza aree non patologiche
+come tali.
+I risultati sono riportati in tabella \ref{tab:shallow-learning-results}.
+Il tempo di esecuzione medio per tutti i modelli è di circa 10 secondi,
+che dipende per lo più dalla fase di estrazione delle componenti
+di GLCM e GLRLM e non è intaccato significativamente da altri fattori
+come la profondià o il numero di alberi impiegati nella foresta.
 
-\section{Processi}
-\subsection{La Libreria MMSegmentation}
-\subsection{Allenamento del Modello}
-\subsection{Valutazione del Modello}
+\begin{table}
+    \centering
+    \begin{tabular}[h]{||c|c|c|c|c||c|c|c||}
+    \hline
+    \multicolumn{5}{||c||}{\bf Parametri} & \multicolumn{3}{c||}{\bf Prestazioni} \\
+    \hline
+    \textbf{SR}  & \textbf{LR}  & \textbf{MD}  & \textbf{MT}  & \textbf{REG} & \textbf{F1} & \textbf{PREC}  & \textbf{REC} \\
+    \hline
+    \hline
+    1.1 & 0.1 & 50  & 250 & 1.0 & {\bf 63.46} & 68.35 & 59.22 \\ 
+    1.1 & 0.1 & 50  & 200 & 0.1 & 63.35 & 67.47 & {\bf 59.69} \\ 
+    1.1 & 0.1 & 50  & 250 & 0.1 & 63.27 & 68.24 & 58.98 \\ 
+    1.0 & 0.1 & 100 & 250 & 1.0 & 63.27 & 68.09 & 59.08 \\ 
+    1.1 & 0.1 & 100 & 200 & 0.1 & 63.18 & {\bf 70.12} & 57.48 \\ 
+    \hline
+    \end{tabular}
+    \caption{\label{tab:shallow-learning-results}Milgiori risultati 
+    del modello di shallow-learning. \\
+    SR = Sampling Rate, LR = Learning Rate, MD = Massima Profondità
+    Alberi, MT = Massimo Numero di Alberi, 
+    REG = Fattore di Regolarizzazione.
+    I risultati fanno riferimento alla sola classe patologia.
+    }
+\end{table}
+
+Dai risultati si nota come l'idea di adottare
+l'{\it over-sampling} abbia effettivamnte
+portato a risultati migliori per il modello
+e che la scelta del {\it learning rate}
+non sembra essere di particolare rilievo,
+probababilmente per la presenza del fattore
+di regolarizzazione.
+Focalizzandoci sulle metriche di interesse
+invece notiamo come i risultati non siano
+esattamente brillanti, in con valori di 
+F1 che si aggirano attorno ai 63
+punti percentuali.
+Questo numero non si discosta eccessivamente
+dai valori di precisone e di richiamo,
+lasciando indicare una reale difficoltà
+del modello nel distinguere tra le due classi.
+Queste prestazioni congiuntamente al lungo
+tempo di elaborazione, circa 10 secondi per un
+fotogramma, lo rendono difficilmente utilizzabile
+in un contesto reale.
+Tuttavia la lentezza del modello risiede
+principalmente nella necessità di calcolare
+le matrici GLCM e GLRLM per ogni ROI.
+Per calcolare queste componenti è
+stata impiegata la libreria
+Pyradiomcs\cite{radiomics}, che al contrario
+di altre librerie non è ottimizzata per
+eseguire i calcoli in maniera efficiente e 
+parallela.
+Un miglioramento di queste API e un futuro
+sviluppo sulle prestazioni potrebbe
+rendere appetibile questo tipo di
+modello.
+
