@@ -1,9 +1,325 @@
 \graphicspath{../assets}
 
 \chapter{Modello}
+
+\section{\label{sec:Dataset}Dataset}
+
+Allenando un modello di intelligenza artificiale è necessario
+rifelttere sul tipo di dati che si vogliono utilizzare per
+l'apprendimento.
+Nel mondo accademico sono disponibili vari dataset che vengono
+considerati come banco di prova nel momento in cui si vuole
+produrre un nuovo tipo di modello, ma spesso tali dati non 
+sono invece adatti se si sa già quale modello si intende
+utilizzare e si vuole invece creare qualcosa di concretamente
+utilizzabile, ed è quindi necessario raccogliere o ottenre
+i dati necessari in altri modi.
+Tuttavia, come nel nostro caso, questi dataset possono comunque
+essere messi a supporto dei nostri dati specifici.
+
+Per l'allenamento del modello per il nostro applicativo faremo
+uso di due dataset, uno pubblico ed uno creato {\it ad-hoc}
+dall'Ospedale Mauriziano di Torino.
+Il primo è il dataset HyperKvasir\ref{tab:hyperkvasir},
+che raccoglie una moltitutine di dati riguardante
+vari riscontri patologici di più parti intestinali, assieme
+anche a dei video.
+Una criticità di questo dataset è che, seppur di grandi dimensioni,
+non contiene dati di nostro diretto interesse.
+L'altro dataset è invece composto da acquisizioni endoscopiche
+svolte dal personale medico dell'ospedale Mauriziano di Torino,
+che invece raffigura esattamente il nostro caso di interesse.
+Nel suo caso, la criticità è la scarsa quantità di dati
+a disposizione.
+Se infatti sono state messe a disposizione ben 1194 immagini,
+i riscontri patologici, di fondamentale importanza in quanto
+è solo in base ad essi che il modello puo' imparare a discriminare
+tra i tessuti sani e quelli patologici, sono solo 49.
+A peggiorare la situazione è il fatto che di queste 49 immagini
+solo 38 sono annotate ed utilizzabili, dove per annotate
+si intende l'indicazione dell'area patologica di interesse, e per
+utilizzabili che si disponga sia dell'immagine originale che di
+quella non annotata.
+
+Per questi motivi, nello sviluppo dell'algoritmo descritto in
+\ref{sec:shallow-learning} si è utilizzato il solo dataset
+Mauriziano, mentre per il modello di deep learning
+descritto in \ref{sec:deep-learning} è stato necessario
+l'utilizzo del dataset HyperKvasir.
+
+\subsection{\label{sec:dataset-mauriziano}Dataset Mauriziano}
+
+A differenza dei modelli di deep learning, gli alberi decisionali
+di cui in \ref{sec:shallow-learning} non operano direttamene
+con le immagini, ma con vettori di dati che descrivano a livello
+statistico le nostre immagini.
+In questa sezione discuteremo il modo in cui questa trasformazione
+viene eseguita.
+
+Il puntodi partenza sono le immagini stesse, e a differenza di
+quanto accade per il modello descritto in \ref{sec:deep-learning},
+utilizzare le immagini contenenti l'annotazione non dà una
+quantità eccessiva di informazioni per la predizione, quindi
+potremo utilizzare tutte e 49 le immagini patologiche.
+Inoltre il modello puo' comunque giovare dall'avere a disposizione
+anche delle immagini sane per allenarsi. Per questo motivo verrano
+utilizate anche 25 immagini sane, meno di quelle patologiche per
+non creare eccessivo scompenso.
+
+\begin{figure}
+    \includegraphics[width=0.9\textwidth]{./assets/side-by-side.png}
+    \caption{\label{fig:side-by-side}Esempio di immagine originale (sinistra) e
+    di immagine con annotazione {\it hard-coded} (destra)}
+\end{figure}
+
+Come discusso, le immagini si presentano come immagini {\it hard-coded}.
+Questo significa che l'annotazione di dove il tessuto si trovi
+nell'immagine è stata eseguita in maniera irreversibile sull'immagine,
+e non è direttamente utilizzabile per l'apprendimento.
+Tagliate via alcune porzioni superflue, come la seconda visuale che
+non è di nostro interesse, e tagliando via i dati sensibili del paziente,
+il primo step è dunque andare a ottenere una rappresentazione più
+fruibile dell'annotazione.
+
+
+Partendo da una maschera vuota, è possibile sfruttare il colore
+verde acceso dell'annotazione, visibile nell'immagine \ref{fig:side-by-side}
+per identificare un anello che racchiuda l'annotazione.
+A questo anello si applica poi un operatore morfologico di dilatazione,
+per assicurarsi che tale anello sia chiuso e non ci siano buchi lungo la
+sua traccia.
+A questo punto si applica un secondo operatore morfologico, questa
+volta di chiusura, in modo da andare a riempire la traccia e ottenere
+una maschera uniforme lungo tutto l'area patolgica, e si termina
+con un'operatore morfolico di erosione per annullare gli effetti della
+precedente dilatazione.
+A questo punto abbiamo ottenuto la maschera di annotazione da
+usare con la nostra immagine non annotata, che deve essere
+salvata in un formato che possa essere compresso senza perdita.
+In questo caso si è scelto di utilizzare per il modello di 
+{\it shallow learning} il formato {\it NPY}, che permette di salvare
+e leggere direttamente la matrice di pixel tramite apposite
+librerie Python, e per quello di {\it deep learning} il formato
+{\it PNG} che è quello impiegato dalla libreria Pytorch per
+elaborare le annotazioni.
+
+
+\begin{figure}[h]
+    \center
+    \includegraphics[width=0.9\textwidth]{./assets/cutout2.png}
+    \caption{\label{fig:cutout}Processo di estrazione delle maschere.
+    In senso orario: immagine annotata, maschera calcolata, immagine originale,
+    ipotetico ritaglio della sola parte patologica.}
+\end{figure}
+
+Le immagini vengono poi processate per poter essere elaborate
+dall'algoritmo, come descritto in \ref{sec:shallow-learning}.
+Si prosegue poi andando a trasformare le immagini in
+{\it Region of Interest} (ROI), ovvero piccole sezioni di immagine
+di dimensione fissa 50$\times$50 pixel, con una sovrapposizione
+del 40\% tra una ROI e la successiva in entrambe le direzioni,
+ovvero di 20 pixel.
+In fase di estrazione vengono filtrate via le ROI che non contengano
+effettivamnte del tessuto andando a scartare quelle che siano
+composte per più del 70\% da pixel neri, e viene confrontata
+la posizione da dove è estratta la ROI con la corrispondente
+posizione nella maschera: nel caso in cui oltre il 50\% della ROI
+ricada in una zona patologica, essa viene classificata come ROI
+patologica, altrimenti essa viene classificata come ROI sana.
+
+\begin{figure}
+    \includegraphics[width=\textwidth]{./assets/path-overlap.png}
+    \caption{\label{fig:patch-overlap}Esempio di sovrapposizione delle ROI}
+\end{figure}
+
+Appare evidente che essendo le zone di tessuto patoligico solo
+una piccola parte dell'immagine e utilizzando anche immagini
+totalmente sane, il numero di ROI sane sia molto più alto di
+quelle patologiche: per questo motivo le ROI patologiche
+vengono salvate anche rotate di 90° in senso orario e salvate
+nuovamente, in modo da aumentare la quantità di dati
+a disposizione.
+Estratte le ROI, esse vengono processate come descritto in
+\ref{sec:shallow-learning} e i dati vengono salvati
+in un file di formato {\it CSV}, assieme ai valori massimi
+e minimi di ogni {\it feature} che servirà poi per eseguire
+la normalizzazione.
+I valori di massimi e minimi sono anche impiegati per
+normalizzare il dataset appena generato, usando la tecnica
+{\it min-max normalization}.
+Un sommario dei dati estratti è riportato nella tabella
+\ref{tab:mauriziano}.
+In fase di allenamento del modello il 10\% delle
+{\it features} di train viene utilizzato come
+dataset di validazione per monitorare l'andamento.
+
+\begin{table}
+    \center
+    \begin{tabular}[h]{||c||c|c|c||}
+        \hline
+        & Train & Test & Totale \\
+        \hline
+        Immagini Sane & 20 & 5 & 25 \\
+        \hline
+        Imagini Patologiche & 40 & 9 & 49 \\
+        \hline
+        ROI Sane & 93.757 & 22.739 & 116.469 \\
+        \hline
+        ROI Patologiche & 52.840 & 11.602 & 64.442 \\
+        \hline
+        \hline
+        \multirow{2}{*}{Totale} & 60 & 13 & 73 \\ \cline{2-4}
+        & 146'597 & 34.341 & 180.938 \\
+        \hline
+    \end{tabular}
+    \caption{\label{tab:mauriziano}Composizione del dataset Mauriziano per
+    algoritmo di Shallow Learning}
+\end{table}
+
+Nel caso dell'algoritmo descritto in \ref{sec:deep-learning},
+è sufficiente avere le maschere di annotazione, ma è richiesto
+che l'immagine utilizzata in ingresso sia pulita e senza annotazioni.
+Come già discusso però, il numero esiguo di campioni lo rende
+inutilizzabile da solo per l'allenamento di un modello di
+{\it deep learning}, o almeno non uno di cui i risultati abbiano
+una qualche rilevanza statistica.
+Le 49 immagini patologiche vengono quindi divise in maniera poco
+generosa verso la porzione dedicata al training, divsione
+descritta nella tabella \ref{tab:mauriziano-ii}, in quanto questa
+verrà utilizzata solo in fase di {\it fine-tuning} del modello,
+mentre il resto viene diviso in maniera equa tra validazione e test.
+Infine, usando il software {\tt ffmpeg} tute le immagini vengono
+usate per creare un video da utilizzare in fase di dimostrazione
+dell'applicativo.
+Solitamente non è corretto utilizzare immagini impiegate in fase
+di validazione o di allenamento per testare un modello,
+tuttavia non andando a valutare le prestazioni su tale video
+ma solo la funzionalità questo comportamento risulta accettabile.
+Il video in questione viene impostato per avere un {\it frame-rate}
+10 FPS non per vincoli tecnici del modello ma per poter
+essere apprezzato dall'occhio umano.
+
+\begin{table}
+    \center
+    \begin{tabular}[h]{||c|c||}
+        \hline
+        Split & Immagini \\
+        \hline
+        Train & ? \\
+        Test & ? \\
+        Validation & ? \\
+        \hline
+        Totale & 49 \\
+        \hline
+    \end{tabular}
+    \caption{\label{tab:mauriziano-ii}Divisione del dataset Mauriziano per
+    algoritmo di Deep Learning}
+\end{table}
+
+
+
+\subsection{Il Dataset HyperKvasir}
+
+Il dataset HyperKvaris\cite{HyperKvasirDataset} nasce per sopperire
+alla mancanza di dati medici per lo studio e l'addestramento
+di modelli di intelligenza artificiale.
+La raccolta di dati è, in ogni ambito, un lavoro costoso non 
+soltatno in termini monetari ma spesso e volentieri anche
+per fattori di tempo e di risorse umane.
+Dataset comunemente usati nella ricerca di modelli di intelligenza
+artificiale, come {\it Common Object and Context}\cite{cocodataset}
+(COCO) ed {\it ImageNet} \cite{imagenet} contengono
+immagini di oggetti comuni presi dalla quotidianità,
+quindi classificabili da qualunque persona: ciò non toglie
+che il processo di annotazione, che puo' prendere
+varie forme come la classificazione, la segmentazione e la
+circoscrizione, sia un processo lungo e ripetitivo.
+
+Nel caso specifico della medicina, le cose si complicano
+molto di più.
+Sin dal principio, è molto diffile ottenere i dati grezzi,
+quindi non annotati, spesso anche per tutelare la privacy
+del paziente stesso, o comunque è difficile ottenerne in
+quantità sufficienti, ed anche quando questo accade
+è necessario l'impiego di personale medico altamente
+specializzato, nel nostro caso nel settore della
+gastroenterologia, per annotare e segmentare le immagini.
+Specificiatamente per l'ambito medico, è anche preferibile
+avere più di un riscontro.
+
+HyperKvasir è dunque la più grande raccolta di immagini
+e video di esami di endoscopia digestiva, rilasciato proprio
+allo scopo di facilitare la ricerca in questo ambito.
+Va fatto tuttavia notare che quanto detto in precedenza resta
+purtroppo vero:
+non lasciandoci trarre in inganno dalla dimensione del dataset,
+che ammonta a ben 110'00' immagini e 374 video, bisogna
+constatare che si tratti comunque di un dataset molto
+eterogeno nella sua composizione.
+Delle 110'000 immagini, infatti, 99'000 sono che sono
+talmente prive di annotazioni, vale a dire nè classificate
+nè segmentate in alcun modo, e delle restanti 11'000
+solo 1'000 sono immagini di cui sono disponibili
+le annotazioni di segmentazione.
+Per ultimo, trattandosi di un dataset per lo studio
+di analisi endoscopiche, le immagini riportanti metaplasie
+sono presenti solo come immagini classificate ma non come
+segmentate, fattore che renderebbe impraticabile
+l'utilizzo del nostro modello.
+
+\begin{table}
+    \center
+    \begin{tabular}{||c|c|c|c||}
+        \hline
+        Tipologia & \# Campioni & \# Classi & Dimensione (MB) \\
+        \hline
+        \hline
+        Classificate & 10'662 & 23 & 3'960 \\
+        \hline
+        Segmentate & 1'000 & 1 (Polyp) & 57 \\
+        \hline
+        Non annotate & 99'417 & 0 & 29'940 \\
+        \hline
+        Video & 374 & 30 & 32'539 \\
+        \hline
+        \hline
+        Totale & 111'453 & --- & 66'496 \\
+        \hline
+    \end{tabular}
+    \caption{\label{tab:hyperkvasir}Composizione del dataset HyperKvasir}
+\end{table}
+
+È ovviamente improprio l'utilizzo di un dataset che raffiguri
+oggetti diversi da quelli che si possono riscontrare nel 
+contesto di applicazione per l'addestramento del modello,
+tuttavia avendo a che fare con un numero di campioni
+relativo ad esso molto limitato si è scelto di utilizzarlo
+in congiunzione con il dataset descritto in \ref{sec:dataset-mauriziano}.
+Questo è possibile tramite l'impiego del {\it transfer learning},
+che consiste nell'usare come base di partenza per l'addestramento
+di un nuovo modello uno già allenato su un dataset con
+caratteristiche simili al nuovo.
+Questa tecnica è generalmente utilizzata per velocizzare
+il processo di apprendimento, insieme anche al raggiungimento
+di risultati migliori, ma è anche molto utile quando si 
+dispone di pochi dati, come nel nostro caso.
+È bene notare dunque che l'impiego di {\it transfer learning}
+per lo sviluppo di modelli di intelligenza artificiale non è
+dunque un ultima risorsa ma bensì la norma, vista la
+pervasività che ha dimostrato nei vari ambiti di applicazione.
+
+In ultimo, il dataset HyperKvasir è anche molto eterogeno
+nella forma in cui si presentano le immagini.
+A differenza del dataset in \ref{sec:dataset-mauriziano} infatti,
+dove le acquisizioni sono state effettuate tutte con la medesima
+macchina, sono di uguale ed altissima risoluzione, nel caso
+di HyperKvasir infatti abbiamo con immagini provenienti da diverse
+fonti e di qualità generalmente inferiore.
+
+
 \section{Lavori Precedenti e Considerazioni Generali}
 
-La terminologia intelligenza artificiale, o alternativamente machine learngin,
+La terminologia intelligenza artificiale, o alternativamente machine learning,
 indica un campo molto vasto che raccoglie molte e diverse tecniche di apprendimento
 ed elabroazione dati, che possono spaziare su più livelli di complessità ed essere 
 divisi in molteplici categorie.
@@ -16,8 +332,8 @@ abbiamo un algoritmo che dato un input $\vec{x}$, la cui realizzazione concreta
 varia a seconda dell'approccio utilizzato e specifichieremo nel dettaglio quando
 necessario, e ne calcolano un output $\vec{y} = f(\vec{x})$.
 Anche per $\vec{y}$ la realizzazione concreta puo' differire molto, 
-ma una forma generale è un vettore con $N_c$ dimensioni, $N_c$, dove $N_c$ è il numero di
-classi del problema, ovvero il numero di possibili risposte.
+ma una forma generale è un vettore con $N_c$ dimensioni, $N_c$, dove 
+$N_c$ è il numero di classi del problema, ovvero il numero di possibili risposte.
 Nel nostro specifico caso, dove cerchiamo soltanto di discriminare tra un tessuto
 ritenuto sano ed uno ritenuto patologico, avremmo che $N_c = 2$.
 Nel caso si stia trattando un problema binario come il nostro, un'altra alternativa
@@ -28,7 +344,9 @@ vettore unidimensionale o uno scalare.
 \begin{figure}
     \center
     \includegraphics[width=0.9\textwidth]{./assets/semseg.jpg}
-    \caption{\label{fig:semseg}Esempio di Semantic Segmentation applicata al riconoscimento di oggetti stradali. Fonte: https://towardsai.net/p/l/machine-learning-7}
+    \caption{\label{fig:semseg}Esempio di Semantic Segmentation applicata 
+    al riconoscimento di oggetti stradali. 
+    Fonte: https://towardsai.net/p/l/machine-learning-7}
 \end{figure}
 
 Il problema che si tenta di risolvere è denominato
@@ -410,316 +728,6 @@ da ottenere una dimensione pari a quella in ingresso.
 
 
 
-\section{\label{sec:Dataset}Dataset}
-
-Allenando un modello di intelligenza artificiale è necessario
-rifelttere sul tipo di dati che si vogliono utilizzare per
-l'apprendimento.
-Nel mondo accademico sono disponibili vari dataset che vengono
-considerati come banco di prova nel momento in cui si vuole
-produrre un nuovo tipo di modello, ma spesso tali dati non 
-sono invece adatti se si sa già quale modello si intende
-utilizzare e si vuole invece creare qualcosa di concretamente
-utilizzabile, ed è quindi necessario raccogliere o ottenre
-i dati necessari in altri modi.
-Tuttavia, come nel nostro caso, questi dataset possono comunque
-essere messi a supporto dei nostri dati specifici.
-
-Per l'allenamento del modello per il nostro applicativo faremo
-uso di due dataset, uno pubblico ed uno creato {\it ad-hoc}
-dall'Ospedale Mauriziano di Torino.
-Il primo è il dataset HyperKvasir\ref{tab:hyperkvasir},
-che raccoglie una moltitutine di dati riguardante
-vari riscontri patologici di più parti intestinali, assieme
-anche a dei video.
-Una criticità di questo dataset è che, seppur di grandi dimensioni,
-non contiene dati di nostro diretto interesse.
-L'altro dataset è invece composto da acquisizioni endoscopiche
-svolte dal personale medico dell'ospedale Mauriziano di Torino,
-che invece raffigura esattamente il nostro caso di interesse.
-Nel suo caso, la criticità è la scarsa quantità di dati
-a disposizione.
-Se infatti sono state messe a disposizione ben 1194 immagini,
-i riscontri patologici, di fondamentale importanza in quanto
-è solo in base ad essi che il modello puo' imparare a discriminare
-tra i tessuti sani e quelli patologici, sono solo 49.
-A peggiorare la situazione è il fatto che di queste 49 immagini
-solo 38 sono annotate ed utilizzabili, dove per annotate
-si intende l'indicazione dell'area patologica di interesse, e per
-utilizzabili che si disponga sia dell'immagine originale che di
-quella non annotata.
-
-Per questi motivi, nello sviluppo dell'algoritmo descritto in
-\ref{sec:shallow-learning} si è utilizzato il solo dataset
-Mauriziano, mentre per il modello di deep learning
-descritto in \ref{sec:deep-learning} è stato necessario
-l'utilizzo del dataset HyperKvasir.
-
-\subsection{\label{sec:mauriziano}Dataset Mauriziano}
-
-A differenza dei modelli di deep learning, gli alberi decisionali
-di cui in \ref{sec:shallow-learning} non operano direttamene
-con le immagini, ma con vettori di dati che descrivano a livello
-statistico le nostre immagini.
-In questa sezione discuteremo il modo in cui questa trasformazione
-viene eseguita.
-
-Il puntodi partenza sono le immagini stesse, e a differenza di
-quanto accade per il modello descritto in \ref{sec:deep-learning},
-utilizzare le immagini contenenti l'annotazione non dà una
-quantità eccessiva di informazioni per la predizione, quindi
-potremo utilizzare tutte e 49 le immagini patologiche.
-Inoltre il modello puo' comunque giovare dall'avere a disposizione
-anche delle immagini sane per allenarsi. Per questo motivo verrano
-utilizate anche 25 immagini sane, meno di quelle patologiche per
-non creare eccessivo scompenso.
-
-\begin{figure}
-    \includegraphics[width=0.9\textwidth]{./assets/side-by-side.png}
-    \caption{\label{fig:side-by-side}Esempio di immagine originale (sinistra) e
-    di immagine con annotazione {\it hard-coded} (destra)}
-\end{figure}
-
-Come discusso, le immagini si presentano come immagini {\it hard-coded}.
-Questo significa che l'annotazione di dove il tessuto si trovi
-nell'immagine è stata eseguita in maniera irreversibile sull'immagine,
-e non è direttamente utilizzabile per l'apprendimento.
-Tagliate via alcune porzioni superflue, come la seconda visuale che
-non è di nostro interesse, e tagliando via i dati sensibili del paziente,
-il primo step è dunque andare a ottenere una rappresentazione più
-fruibile dell'annotazione.
-
-
-Partendo da una maschera vuota, è possibile sfruttare il colore
-verde acceso dell'annotazione, visibile nell'immagine \ref{fig:side-by-side}
-per identificare un anello che racchiuda l'annotazione.
-A questo anello si applica poi un operatore morfologico di dilatazione,
-per assicurarsi che tale anello sia chiuso e non ci siano buchi lungo la
-sua traccia.
-A questo punto si applica un secondo operatore morfologico, questa
-volta di chiusura, in modo da andare a riempire la traccia e ottenere
-una maschera uniforme lungo tutto l'area patolgica, e si termina
-con un'operatore morfolico di erosione per annullare gli effetti della
-precedente dilatazione.
-A questo punto abbiamo ottenuto la maschera di annotazione da
-usare con la nostra immagine non annotata, che deve essere
-salvata in un formato che possa essere compresso senza perdita.
-In questo caso si è scelto di utilizzare per il modello di 
-{\it shallow learning} il formato {\it NPY}, che permette di salvare
-e leggere direttamente la matrice di pixel tramite apposite
-librerie Python, e per quello di {\it deep learning} il formato
-{\it PNG} che è quello impiegato dalla libreria Pytorch per
-elaborare le annotazioni.
-
-
-\begin{figure}[h]
-    \center
-    \includegraphics[width=0.9\textwidth]{./assets/cutout2.png}
-    \caption{\label{fig:cutout}Processo di estrazione delle maschere.
-    In senso orario: immagine annotata, maschera calcolata, immagine originale,
-    ipotetico ritaglio della sola parte patologica.}
-\end{figure}
-
-Le immagini vengono poi processate per poter essere elaborate
-dall'algoritmo, come descritto in \ref{sec:shallow-learning}.
-Si prosegue poi andando a trasformare le immagini in
-{\it Region of Interest} (ROI), ovvero piccole sezioni di immagine
-di dimensione fissa 50$\times$50 pixel, con una sovrapposizione
-del 40\% tra una ROI e la successiva in entrambe le direzioni,
-ovvero di 20 pixel.
-In fase di estrazione vengono filtrate via le ROI che non contengano
-effettivamnte del tessuto andando a scartare quelle che siano
-composte per più del 70\% da pixel neri, e viene confrontata
-la posizione da dove è estratta la ROI con la corrispondente
-posizione nella maschera: nel caso in cui oltre il 50\% della ROI
-ricada in una zona patologica, essa viene classificata come ROI
-patologica, altrimenti essa viene classificata come ROI sana.
-
-\begin{figure}
-    \includegraphics[width=\textwidth]{./assets/path-overlap.png}
-    \caption{\label{fig:patch-overlap}Esempio di sovrapposizione delle ROI}
-\end{figure}
-
-Appare evidente che essendo le zone di tessuto patoligico solo
-una piccola parte dell'immagine e utilizzando anche immagini
-totalmente sane, il numero di ROI sane sia molto più alto di
-quelle patologiche: per questo motivo le ROI patologiche
-vengono salvate anche rotate di 90° in senso orario e salvate
-nuovamente, in modo da aumentare la quantità di dati
-a disposizione.
-Estratte le ROI, esse vengono processate come descritto in
-\ref{sec:shallow-learning} e i dati vengono salvati
-in un file di formato {\it CSV}, assieme ai valori massimi
-e minimi di ogni {\it feature} che servirà poi per eseguire
-la normalizzazione.
-Un sommaario dei dati estratti è riportato nella tabella
-\ref{tab:mauriziano}.
-In fase di allenamento del modello il 10\% delle
-{\it features} di train viene utilizzato come
-dataset di validazione per monitorare l'andamento.
-
-\begin{table}
-    \center
-    \begin{tabular}[h]{||c||c|c|c||}
-        \hline
-        & Train & Test & Totale \\
-        \hline
-        Immagini Sane & 20 & 5 & 25 \\
-        \hline
-        Imagini Patologiche & 40 & 9 & 49 \\
-        \hline
-        ROI Sane & 93.757 & 22.739 & 116.469 \\
-        \hline
-        ROI Patologiche & 52.840 & 11.602 & 64.442 \\
-        \hline
-        \hline
-        \multirow{2}{*}{Totale} & 60 & 13 & 73 \\ \cline{2-4}
-        & 146'597 & 34.341 & 180.938 \\
-        \hline
-    \end{tabular}
-    \caption{\label{tab:mauriziano}Composizione del dataset Mauriziano per
-    algoritmo di Shallow Learning}
-\end{table}
-
-Nel caso dell'algoritmo descritto in \ref{sec:deep-learning},
-è sufficiente avere le maschere di annotazione, ma è richiesto
-che l'immagine utilizzata in ingresso sia pulita e senza annotazioni.
-Come già discusso però, il numero esiguo di campioni lo rende
-inutilizzabile da solo per l'allenamento di un modello di
-{\it deep learning}, o almeno non uno di cui i risultati abbiano
-una qualche rilevanza statistica.
-Le 49 immagini patologiche vengono quindi divise in maniera poco
-generosa verso la porzione dedicata al training, divsione
-descritta nella tabella \ref{tab:mauriziano-ii}, in quanto questa
-verrà utilizzata solo in fase di {\it fine-tuning} del modello,
-mentre il resto viene diviso in maniera equa tra validazione e test.
-Infine, usando il software {\tt ffmpeg} tute le immagini vengono
-usate per creare un video da utilizzare in fase di dimostrazione
-dell'applicativo.
-Solitamente non è corretto utilizzare immagini impiegate in fase
-di validazione o di allenamento per testare un modello,
-tuttavia non andando a valutare le prestazioni su tale video
-ma solo la funzionalità questo comportamento risulta accettabile.
-Il video in questione viene impostato per avere un {\it frame-rate}
-10 FPS non per vincoli tecnici del modello ma per poter
-essere apprezzato dall'occhio umano.
-
-\begin{table}
-    \center
-    \begin{tabular}[h]{||c|c||}
-        \hline
-        Split & Immagini \\
-        \hline
-        Train & ? \\
-        Test & ? \\
-        Validation & ? \\
-        \hline
-        Totale & 49 \\
-        \hline
-    \end{tabular}
-    \caption{\label{tab:mauriziano-ii}Divisione del dataset Mauriziano per
-    algoritmo di Deep Learning}
-\end{table}
-
-
-
-\subsection{Il Dataset HyperKvasir}
-
-Il dataset HyperKvaris\cite{HyperKvasirDataset} nasce per sopperire
-alla mancanza di dati medici per lo studio e l'addestramento
-di modelli di intelligenza artificiale.
-La raccolta di dati è, in ogni ambito, un lavoro costoso non 
-soltatno in termini monetari ma spesso e volentieri anche
-per fattori di tempo e di risorse umane.
-Dataset comunemente usati nella ricerca di modelli di intelligenza
-artificiale, come {\it Common Object and Context}\cite{cocodataset}
-(COCO) ed {\it ImageNet} \cite{imagenet} contengono
-immagini di oggetti comuni presi dalla quotidianità,
-quindi classificabili da qualunque persona: ciò non toglie
-che il processo di annotazione, che puo' prendere
-varie forme come la classificazione, la segmentazione e la
-circoscrizione, sia un processo lungo e ripetitivo.
-
-Nel caso specifico della medicina, le cose si complicano
-molto di più.
-Sin dal principio, è molto diffile ottenere i dati grezzi,
-quindi non annotati, spesso anche per tutelare la privacy
-del paziente stesso, o comunque è difficile ottenerne in
-quantità sufficienti, ed anche quando questo accade
-è necessario l'impiego di personale medico altamente
-specializzato, nel nostro caso nel settore della
-gastroenterologia, per annotare e segmentare le immagini.
-Specificiatamente per l'ambito medico, è anche preferibile
-avere più di un riscontro.
-
-HyperKvasir è dunque la più grande raccolta di immagini
-e video di esami di endoscopia digestiva, rilasciato proprio
-allo scopo di facilitare la ricerca in questo ambito.
-Va fatto tuttavia notare che quanto detto in precedenza resta
-purtroppo vero:
-non lasciandoci trarre in inganno dalla dimensione del dataset,
-che ammonta a ben 110'00' immagini e 374 video, bisogna
-constatare che si tratti comunque di un dataset molto
-eterogeno nella sua composizione.
-Delle 110'000 immagini, infatti, 99'000 sono che sono
-talmente prive di annotazioni, vale a dire nè classificate
-nè segmentate in alcun modo, e delle restanti 11'000
-solo 1'000 sono immagini di cui sono disponibili
-le annotazioni di segmentazione.
-Per ultimo, trattandosi di un dataset per lo studio
-di analisi endoscopiche, le immagini riportanti metaplasie
-sono presenti solo come immagini classificate ma non come
-segmentate, fattore che renderebbe impraticabile
-l'utilizzo del nostro modello.
-
-\begin{table}
-    \center
-    \begin{tabular}{||c|c|c|c||}
-        \hline
-        Tipologia & \# Campioni & \# Classi & Dimensione (MB) \\
-        \hline
-        \hline
-        Classificate & 10'662 & 23 & 3'960 \\
-        \hline
-        Segmentate & 1'000 & 1 (Polyp) & 57 \\
-        \hline
-        Non annotate & 99'417 & 0 & 29'940 \\
-        \hline
-        Video & 374 & 30 & 32'539 \\
-        \hline
-        \hline
-        Totale & 111'453 & --- & 66'496 \\
-        \hline
-    \end{tabular}
-    \caption{\label{tab:hyperkvasir}Composizione del dataset HyperKvasir}
-\end{table}
-
-È ovviamente improprio l'utilizzo di un dataset che raffiguri
-oggetti diversi da quelli che si possono riscontrare nel 
-contesto di applicazione per l'addestramento del modello,
-tuttavia avendo a che fare con un numero di campioni
-relativo ad esso molto limitato si è scelto di utilizzarlo
-in congiunzione con il dataset descritto in \ref{sec:dataset-mauriziano}.
-Questo è possibile tramite l'impiego del {\it transfer learning},
-che consiste nell'usare come base di partenza per l'addestramento
-di un nuovo modello uno già allenato su un dataset con
-caratteristiche simili al nuovo.
-Questa tecnica è generalmente utilizzata per velocizzare
-il processo di apprendimento, insieme anche al raggiungimento
-di risultati migliori, ma è anche molto utile quando si 
-dispone di pochi dati, come nel nostro caso.
-È bene notare dunque che l'impiego di {\it transfer learning}
-per lo sviluppo di modelli di intelligenza artificiale non è
-dunque un ultima risorsa ma bensì la norma, vista la
-pervasività che ha dimostrato nei vari ambiti di applicazione.
-
-In ultimo, il dataset HyperKvasir è anche molto eterogeno
-nella forma in cui si presentano le immagini.
-A differenza del dataset in \ref{sec:dataset-mauriziano} infatti,
-dove le acquisizioni sono state effettuate tutte con la medesima
-macchina, sono di uguale ed altissima risoluzione, nel caso
-di HyperKvasir infatti abbiamo con immagini provenienti da diverse
-fonti e di qualità generalmente inferiore.
 
 %% \begin{table}
     %% \center

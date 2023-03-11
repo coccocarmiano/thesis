@@ -2,68 +2,104 @@
 
 \section{Struttura}
 
-L'applicativo è sviluppato in Python usando la libreria grafica
-PyQt versione 5.
-La scelta è ricaduta su essa per la sua semplicità d'uso,
-l'ergonomia di sviluppo ed il fatto che gli interpreti
-Python siano {\it cross-platform}, ovvero lo stesso codice
-possa essere utilizzato su vari sistemi operativi.
+L'interfaccia è stata realizzata utilizzando il linguaggio
+di programmazione Python e la libreria PyQt versione 5.
+PyQt è un'implementazione Python per Qt, un framework
+multi-piattaforma per lo sviluppo di applicazioni grafiche.
+Le sue principali caratteristiche sono la portabilità,
+l'interoperabilità e la facilità di utilizzo.
+Questo permette di poter impiegare lo stesso codice
+su più sistemi operativi senza dover aggiungere
+ulteriori livelli di complessità o l'utilizzo
+di strumenti di virtualizzazioni.
 
 Ai fini di testare l'applicativo sarebbe necessario
 avere a disposizione un dispositivo ISCAN da poter collegare
 al computer e vedere il comportamento dell'applicativo con
-la sorgente audio ricevuta.
-Questo è ovviamente impratico per una lunga serie di motivi,
+la sorgente video catturata.
+Questo è ovviamente impratico per vari motivi,
 dal dover impegnare lo strumento per lunghi periodi di tempo
 alla necessità di avere un paziente che si stia sottoponendo
 ad un esame in modo da avere un responso.
-Tuttavia su piattaforme Linux, con sicuramente altre opzioni
-possibili per sistemi Windows e macOS, è possibile simulare
-una sorgente video che in realtà non esiste, grazie alle API
-di sistema {\it Video for Linux 2} (V4L2) e al software
-FFMPEG.
+Per evitare queste problematiche, per fini puramente
+dimostrativi, è stato realizzato anche uno script
+per simulare la sorgente video dell'ISCAN, utilizzando
+il software {\tt ffmpeg} e l'ecosistema {\tt V4L}.
+{\tt V4L} è l'abbreviazione di {\it Video for Linux},
+e permette la creazione di dispositivi video virtuali
+su cui trasmettere un flusso video arbitrario, che verrà
+percepito dal sistema operativo come un dispositivo video
+reale, ad esempio una webcam o lo stesso ISCAN.
 
-Nella pratica quel che si fa è utilizzare V4L2 in modo da
-simulare a livello sistema operativo un dispositivo video che
-in realtà non esiste.
-Il sistema operativo crea comunque un file che lo rappresenta
-su cui grazie ad FFMPEG e ad un suo apposito modulo per V4L2
-si va a scrivere su tale file un video in maniera ciclica,
-in modo che questa sorgente sia esattamente come una che
-potrebbe venire da un dispositivo video qualunque, come una
-webcam, un cavo HDMI o lo stesso ISCAN.
-Il video in questione è ovviamente un video di un'endoscopia
-ottenuto dal dataset HyperKvasir.
+L'applicativo deve quindi principalmente essere in grado
+di catturare un flusso video, in modo da poterne estrarre
+i fotogrammi e ottenerne le predizioni dal modello.
+Dalla predizione ottenuta bisognerà poi, tenendo conto
+delle impostazioni scelte, ricreare l'immagine finale
+da mostrare all'operatore.
+Il modello in questo caso non viene istanziato direttamente
+all'interno dell'applicazione, ma viene esposto come servizio
+esterno con cui l'applicativo comunica tramite una API REST.
+Le API REST sono un modo di comunicare con un servizio web
+tramite richieste HTTP, la cui principale caratteristica
+è la semplicità di utilizzo, e per questo molto popolare.
+Questo tuttavia non significa che le immagini provenienti
+dalla sorgente video escano dal computer e vengano
+inviate in rete, in quanto il {\it server} che gestisce
+tali richieste viene istanziato localmente e quindi
+la comunicazione è limitata al computer su cui si sta
+utilizzando l'applicativo.
+Tuttavia sarebbe possibile estendere tale funzionalità in modo
+da avere un servizio, esposto possibilmente su una rete locale,
+che si occupa di gestire le richieste provenienti da più
+applicativi, operazione che potrebbe essere interessante
+per ridurre ulteriormente i costi o raccogliere ulteriori
+dati per seguenti migliorie.
 
-La fase di {\it serving} del modello, ovvero quella in cui esso
-viene esposto in modo da poter essere utilizzabile per poter
-ottnere le predizioni, viene eseguita grazie alla libreria
-{\tt MMDeploy}\cite{mmdeploy} che fa uso del software Docker.
-Docker è un applicativo che offre virtualizzazione a livello
-sistema operativo, ovvero in modo più leggero rispetto ad una
-macchina virtuale che invece emula un sistema operativo
-all'interno di un altro sistema operativo.
-Questo avviene tramite dei {\it container}, che sono il nostro
-sistema virtualizzato e viene costruito a partire da un'immagine
-che descrive come questa sia composta.
-Il vantaggio nell'uso di tale software e tale libreria sta nel
-poter riutilizzare una configurazione valida senza doversi
-preoccupare di adattarla per farla funzionare o di problemi di 
-compatibilità.
+Il server che gestisce l'istanza del modello puo' essere
+attivato tramite la libreria {\tt MMDeploy}\cite{mmdeploy},
+facente parte dell'ecosistema {\tt OpenMMLab},
+e che si occupa di semplificare la fase di {\it serving}
+di modelli sviluppati con {\tt MMSeg} o altre librerie
+facenti parte del progetto.
+Come accennato, la libreria {\tt MMSeg} è costruita
+al di sopra della libreria {\tt PyTorch}, che a sua volta
+offre un suo software per il {\it serving} dei modelli
+denominato {\tt torchserve}.
+Tuttavia il formato impiegato da {\tt MMSeg} per esportare
+i modelli, ovvero {\tt ONNX}, è diverso da quello di {\tt PyTorch},
+e tale modello necessita quindi di essere convertito.
+Una volta convertito il modello, {\tt MMDeploy} mette a
+disposizione un'immagine {\tt Docker} per creare un'istanza
+del modello sulla macchina, che a sua volta utilizzerà la
+libreria {\tt torchserve}.
+Uno script {\it ad-hoc} è stato creato per semplificare questa
+fase, ma va fatto notare che una volta ottenuto un modello
+soddisfacente è possibile derivare un'immagine derivata
+da quella impiegata che contenga al suo interno il modello
+in modo da semplificare drammaticamente questa fase.
+I principali vantaggi dell'impiego di questa architettura
+sono nuovamente la portabilità e la semplicità d'uso.
+Avviata l'istanza sarà possibile inviare richieste HTTP
+all'indirizzo preimpostato allegando l'immagine da analizzare,
+da cui otterremo come rispsosta un'altra immagine contenente
+la maschera predetta dal modello.
 
-
-
-Essendo un applicativo in Python questo viene distribuito
-come il suo codice sorgente e puo' essere lanciato eseguendo
-il file {\tt app.py}.
-Questa fase è semplificabile tramite delle scorciatoie che
-permettando agli operatori di non doversi interfacciare alla
-linea di comando.
-Oltre alle dipendenze del progetto, fornite nel file
-{\tt requirements.txt}, è necessario avere installato anche
-il software Docker, necessario a lanciare il {\it container}
-per ottenere le predizioni, eseguire la copia della
-libreria {\tt mmsegmentation} e installare le sue dipendenze.
+L'applicativo internamente utilizza un timer per catturare
+i fotogrammi in modo da poterli inviare al modello.
+Allo scadere del timer l'applicativo cattura un fotogramma
+dalla sorgente video scelta e ne richiede la predizione che,
+dopo essere stata visualizzata, farà ripartire il timer.
+La frequenza con cui ciò accade è stata impostata 40
+millisecondi, che corrisponde a circa 24 fotogrammi al secondo,
+una frequenza video standard considerata sufficientemente fluida.
+Tale scelta è dovuta a limitiazioni hardware, nel caso in cui
+una precedente richiesta non sia stata ancora soddisfatta
+non ne verranno inviate di nuove, ma è anche possibile, nel
+momento in cui si disponga di hardware sufficientemente potente,
+impostare il timer a valori più bassi o direttamente richiedere
+che una nuova richiesta venga inviata non appena la precedente
+è stata soddisfatta.
 
 
 \section{Interfaccia}

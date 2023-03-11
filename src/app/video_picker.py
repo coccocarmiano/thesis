@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QPushButton
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import pyqtSignal, QObject, QThread, QCoreApplication, QTimer

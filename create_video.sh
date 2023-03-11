@@ -15,11 +15,11 @@ fi
 mkdir .tmp
 
 ls data/mauri/labeled | xargs -I _ cp "data/mauri/labeled/_" .tmp/
-ffmpeg -framerate 24 -pattern_type glob -i '.tmp/*.jpg' -c:v libx264 -pix_fmt yuv420p data/mauri/video/labeled.mp4
+ffmpeg -framerate 10 -pattern_type glob -i '.tmp/*.jpg' -c:v libx264 -pix_fmt yuv420p data/mauri/video/labeled.mp4
 
 rm .tmp/*
 
 ls data/mauri/labeled | xargs -I _ cp "data/mauri/unlabeled/_" .tmp/
-ffmpeg -framerate 24 -pattern_type glob -i '.tmp/*.jpg' -c:v libx264 -pix_fmt yuv420p data/mauri/video/unlabeled.mp4
+ffmpeg -framerate 10 -pattern_type glob -i '.tmp/*.jpg' -c:v libx264  -pix_fmt yuv420p data/mauri/video/unlabeled.mp4
 
 rm -rf .tmp
