@@ -52,8 +52,6 @@ class VideoPoller(QThread):
 
             # if n > 10:
             # raise Exception("Video source did not open")
-        print("Got a frame!")
-        # self.timer.start()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
         return frame
 
@@ -141,6 +139,7 @@ class MGIWindow(QMainWindow):
     def process_mask(self, mask):
         width = self.mask_controls.mask_width_slider.slider.value()
         grow = spnd.binary_dilation(mask, iterations=width)
+        print(f"Mask Area: {grow.sum():d}")
         grow[mask == True] = 0
         return grow
 
