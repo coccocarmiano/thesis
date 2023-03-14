@@ -50,7 +50,7 @@ print("Train dataset - Number of Samples:", len(train_dataset))
 print("Test dataset - Number of Samples:", len(test_dataset))
 print("Val dataset - Number of Samples:", len(val_dataset))
 
-cfg.runner.max_iters = 2000
+cfg.runner.max_iters = 2_000
 cfg.log_config.interval = 200
 cfg.checkpoint_config.interval = 200
 cfg.evaluation.interval = 200

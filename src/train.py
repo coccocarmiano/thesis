@@ -39,9 +39,9 @@ print("Train dataset - Number of Samples:", len(train_dataset))
 print("Test dataset - Number of Samples:", len(test_dataset))
 print("Val dataset - Number of Samples:", len(val_dataset))
 
-cfg.runner.max_iters = 8000,
-cfg.log_config.interval = 2000,
-cfg.checkpoint_config.interval = 2000,
+cfg.runner.max_iters = 80_000
+cfg.log_config.interval = 500
+cfg.checkpoint_config.interval = 2000
 cfg.evaluation.interval = 2000
 
 train_segmentor(model, [train_dataset], cfg, distributed=False, validate=True)

@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     for idx, file in enumerate(tqdm.tqdm(labeled_files)):
         if file not in unlabeled_files:
-            print(f"File {file} not found in unlabeled folder")
+            print(f"File {file} for idx {idx} not found in unlabeled folder")
             continue
 
         src_path = osp.join(data_dir_labeled, file)
